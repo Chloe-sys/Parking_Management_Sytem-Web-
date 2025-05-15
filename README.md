@@ -1,174 +1,135 @@
-Parking Management System
-Overview
-This Parking Management System is a full-stack application designed to manage parking slots, user registrations, and administrative functions for a parking facility. The system features separate interfaces for administrators and regular users, with secure authentication and role-based access control.
+# 🚗 Parking Management System
 
-Features
-User Features
-User Registration & Authentication
+![Node.js](https://img.shields.io/badge/Node.js-18.x-green)
+![Express](https://img.shields.io/badge/Express-4.x-lightgrey)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-blue)
+![React](https://img.shields.io/badge/React-18.x-61DAFB)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
-Sign up with email, name, and license plate number
+A modern full-stack parking management solution with separate interfaces for administrators and users, featuring secure authentication, real-time slot management, and comprehensive analytics.
 
-Email verification via OTP
 
-Secure login with JWT tokens
+## ✨ Key Features
 
-User Dashboard
+### 👤 User Features
+| Feature | Description |
+|---------|-------------|
+| **🔐 Secure Auth** | JWT authentication with email verification |
+| **📊 User Dashboard** | View assigned slots, approval status, and notifications |
+| **👤 Profile Control** | Update personal info and change password |
 
-View assigned parking slot
+### 👨‍💼 Admin Features
+| Feature | Description |
+|---------|-------------|
+| **👥 User Management** | Approve/reject users, view all registrations |
+| **🚘 Slot Administration** | Create/update/delete slots, assign to users |
+| **📈 Analytics Dashboard** | Real-time parking statistics and utilization rates |
 
-Check approval status
+## 🛠️ Tech Stack
 
-View notifications
+### Backend
+- **Runtime**: Node.js 18.x
+- **Framework**: Express 4.x
+- **Database**: MySQL 8.0
+- **Auth**: JWT with bcrypt hashing
+- **Email**: Nodemailer for OTP/notifications
 
-Slot Management
+### Frontend
+- **Framework**: React 18 + Vite
+- **UI Library**: Material-UI (MUI)
+- **Styling**: TailwindCSS
+- **State Management**: React Context API
 
-Release occupied slot
+## 🚀 Quick Start
 
-View slot details
+### Prerequisites
+- Node.js ≥18.x
+- MySQL ≥8.0
+- SMTP credentials
 
-Profile Management
+### Installation
+```bash
+# Clone repository
+git clone https://github.com/yourusername/parking-management.git
+cd parking-management
 
-Update personal information
-
-Change password
-
-Admin Features
-User Management
-
-View all registered users
-
-Approve/reject user applications
-
-View user details (name, plate number, status)
-
-Parking Slot Management
-
-Create/update/delete parking slots
-
-View all slots (available/occupied/reserved)
-
-Assign slots to users
-
-Dashboard & Analytics
-
-View parking statistics (utilization rate, available slots)
-
-See recent slot assignments
-
-View pending approvals
-
-Technical Stack
-
-Backend
-Runtime: Node.js
-
-Framework: Express.js
-
-Database: MySQL
-
-Authentication: JWT (JSON Web Tokens)
-
-Email Service: Nodemailer (for OTP and notifications)
-
-Other Libraries:
-
-bcryptjs (password hashing)
-
-mysql2/promise (database client)
-
-jsonwebtoken (JWT implementation)
-
-Frontend 
-Framework: React.js + Vite
-
-UI Library: Material-UI 
-
-Styling: TailwindCSS
-
-Installation
-Prerequisites
-Node.js (v14 or higher)
-
-MySQL database
-
-SMTP credentials for email service
-
-Backend Setup
-Clone the repository:
-
-bash
-git clone [repository-url]
-cd Backend
-Install dependencies:
-
-bash
+# Install dependencies
 npm install
-Set up environment variables:
-Create a .env file in the root directory with the following variables:
 
-DB_HOST=your_database_host
-DB_USER=your_database_user
-DB_PASSWORD=your_database_password
-DB_NAME=your_database_name
-JWT_SECRET=your_jwt_secret_key
-EMAIL_USER=your_smtp_username
-EMAIL_PASS=your_smtp_password
-Database setup:
+# Set up environment
+cp .env.example .env
+# Edit .env with your credentials
+```
+## 🗃️ Database Setup
 
-Import the SQL schema from database/schema.sql
+```sql
+-- Create database and user
+CREATE DATABASE parking_system;
+CREATE USER 'parking_admin'@'localhost' IDENTIFIED BY 'securepassword';
+GRANT ALL PRIVILEGES ON parking_system.* TO 'parking_admin'@'localhost';
+FLUSH PRIVILEGES;
 
+-- Use the database
+USE parking_system;
 
-Start the server:
+-- Import schema from database/schema.sql
+```
+## 🚀 Running the System
 
-bash
+### Backend Server
+```bash
+# Navigate to backend directory
+cd backend
+
+# Install dependencies
+npm install
+
+# Start the server (production)
 npm start
-# or for development
+
+# Or for development with hot-reload
 npm run dev
-API Documentation
-The API follows RESTful conventions with JSON responses. All endpoints (except authentication) require JWT authentication.
 
-Base URL
-http://localhost:8082/api
+# Server will be available at:
+# http://localhost:8082
+```
 
-Authentication
-POST /auth/signup - User registration
+###Frontend Server
+```bash
+# Open new terminal window
+# Navigate to frontend directory
+cd ../Front
 
-POST /auth/login - User login
+# Install dependencies
+npm install
 
-POST /auth/verify-email - OTP verification
+# Start development server
+npm run dev
 
-User Endpoints
-GET /user/dashboard - Get user dashboard data
+# Frontend will be available at:
+# http://localhost:8086
+```
 
-GET /user/slot - Get user's assigned slot
+# 📚 API Documentation
 
-GET /user/notifications - Get user notifications
+Explore our interactive API documentation powered by **Swagger UI**:
 
-Admin Endpoints
-GET /admin/users - Get all users
+🔗 [http://localhost:8082/api-docs](http://localhost:8082/api-docs)
 
-POST /admin/users/:userId/approve - Approve user
+---
 
-POST /admin/users/:userId/reject - Reject user
+## 🔑 Key Endpoints
 
-GET /admin/parking-slots - Get all parking slots
+| **Endpoint**                      | **Method** | **Description**                        | **Required Role** | **Request Body Example**                                      |
+|----------------------------------|------------|----------------------------------------|--------------------|----------------------------------------------------------------|
+| `/api/auth/signup`               | POST       | Register new user                      | Public             | `{ "name": "John", "email": "john@example.com", "password": "pass123", "plateNumber": "RAA123" }` |
+| `/api/auth/login`               | POST       | User authentication                    | Public             | `{ "email": "john@example.com", "password": "pass123" }`       |
+| `/api/user/dashboard`            | GET        | Get user dashboard                     | User               | Requires JWT token in header                                  |
+| `/api/admin/parking-slots`       | POST       | Create new parking slot                | Admin              | `{ "slotNumber": "A1"}`               |
+| `/api/admin/slots/:id/assign`    | POST       | Assign slot to specific user           | Admin              | `{ "userId": "12345" }`                                        |
 
-POST /admin/parking-slots - Create new slot
+---
 
-POST /admin/parking-slots/:slotId/assign - Assign slot to user
+✅ Ensure to include the **JWT token** in the `Authorization` header for protected routes:
 
-For more endpoints, reead documentation at http://localhost:8082/api-docs
 
-Database Schema
-Tables
-users
-
-id, name, email, password, plateNumber, status, role, isEmailVerified, createdAt, updatedAt
-
-parking_slots
-
-id, slotNumber, status, location, userId, assignedAt
-
-notifications
-
-id, userId, type, message, isRead, createdAt
