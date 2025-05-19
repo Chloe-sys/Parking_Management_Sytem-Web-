@@ -1,6 +1,6 @@
-const speakeasy = require('speakeasy');
+
 const nodemailer = require('nodemailer');
-const twilio = require('twilio');
+
 const pool = require('../config/database');
 const { generateRandomString } = require('./helper');
 

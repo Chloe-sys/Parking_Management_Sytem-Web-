@@ -60,6 +60,18 @@ CREATE TABLE otps (
     createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Slot Requests table
+CREATE TABLE slot_requests (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    userId INT NOT NULL,
+    slotId INT NOT NULL,
+    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+    createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (slotId) REFERENCES parking_slots(id) ON DELETE CASCADE
+);
+
 -- Create indexes
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_status ON users(status);

@@ -12,6 +12,8 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import debounce from 'lodash/debounce';
 import { useNavigate } from 'react-router-dom';
+import { AdminNavbarLayout } from '@/components/admin/AdminNavbar';
+import { theme } from '../../styles/theme';
 
 interface User {
   id: string;
@@ -67,21 +69,13 @@ const AdminUserManagement: React.FC = () => {
     sortOrder: 'desc'
   });
   const [showSettings, setShowSettings] = useState(false);
-
-  // Debounced search function
-  const debouncedFetchUsers = useCallback(
-    debounce(() => {
-      fetchUsers();
-    }, 500),
-    [filters, pagination.currentPage]
-  );
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
-    debouncedFetchUsers();
-    return () => {
-      debouncedFetchUsers.cancel();
-    };
-  }, [filters, pagination.currentPage]);
+    fetchUsers();
+    // eslint-disable-next-line
+  }, [search, pagination.currentPage]);
 
   const fetchUsers = async () => {
     try {
@@ -89,22 +83,31 @@ const AdminUserManagement: React.FC = () => {
       const response = await adminAPI.getUsers({
         page: pagination.currentPage,
         limit: pagination.limit,
-        search: filters.search,
+        search,
         status: filters.status === 'all' ? undefined : filters.status,
         plateNumber: filters.plateNumber,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder
       });
-
-      console.log('Fetch users response:', response);
-
-      if (response.success && response.data?.users) {
-        setUsers(response.data.users);
-        setPagination(response.data.pagination);
-      } else {
-        console.error('Invalid response format:', response);
-        toast.error('Failed to fetch users: Invalid response format');
+      let usersData = [];
+      let paginationData = pagination;
+      if (Array.isArray(response.data)) {
+        usersData = response.data;
+        paginationData = {
+          totalUsers: response.data.length,
+          totalPages: 1,
+          currentPage: 1,
+          limit: response.data.length,
+          hasNextPage: false,
+          hasPrevPage: false
+        };
+      } else if (response.data?.users) {
+        usersData = response.data.users;
+        paginationData = response.data.pagination || pagination;
       }
+      setUsers(usersData);
+      setPagination(paginationData);
+      console.log('Fetched users:', usersData);
     } catch (error: any) {
       console.error('Error fetching users:', error);
       if (error.response?.status === 401) {
@@ -188,6 +191,10 @@ const AdminUserManagement: React.FC = () => {
   };
 
   const handleFilterChange = (key: string, value: string) => {
+    if (key === 'search') {
+      // Sanitize input: allow only alphanumeric, space, dash
+      value = value.replace(/[^a-zA-Z0-9\s-]/g, '').trim();
+    }
     setFilters(prev => ({ ...prev, [key]: value }));
     setPagination(prev => ({ ...prev, currentPage: 1 }));
   };
@@ -226,6 +233,13 @@ const AdminUserManagement: React.FC = () => {
     }
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const sanitized = searchInput.replace(/[^a-zA-Z0-9\s-]/g, '').trim();
+    setPagination(prev => ({ ...prev, currentPage: 1 }));
+    setSearch(sanitized);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-park-secondary">
@@ -235,51 +249,8 @@ const AdminUserManagement: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex bg-park-secondary">
-      {/* Sidebar */}
-      <motion.aside
-        initial={{ x: -80, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="hidden md:flex flex-col w-64 bg-park-primary text-gray-800 py-8 px-6 rounded-r-3xl shadow-lg"
-      >
-        <div className="flex flex-col items-center mb-12">
-          <Car className="h-12 w-12 mb-2" />
-          <h2 className="text-2xl font-bold tracking-wide">ParkEase</h2>
-          <span className="text-sm tracking-widest mt-1">ADMIN</span>
-        </div>
-        <nav className="flex-1 flex flex-col gap-4">
-          <button 
-            className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors text-white" 
-            onClick={() => navigate('/admin/dashboard')}
-          >
-            <LayoutDashboard className="w-5 h-5" /> Dashboard
-          </button>
-          <button 
-            className="flex items-center gap-3 py-2 px-4 rounded-lg bg-park-secondary/20 transition-colors text-white" 
-            onClick={() => navigate('/admin/users')}
-          >
-            <Users className="w-5 h-5" /> Users
-          </button>
-          <button 
-            className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors text-white" 
-            onClick={() => navigate('/admin/parking-slots')}
-          >
-            <Car className="w-5 h-5" /> Parking Slots
-          </button>
-          <button 
-            className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors text-white" 
-            onClick={() => { localStorage.clear(); navigate('/'); }}
-          >
-            <LogOut className="w-5 h-5" /> Logout
-          </button>
-        </nav>
-        <div className="mt-auto flex flex-col items-center">
-          <span className="text-xs text-gray-600">&copy; {new Date().getFullYear()} ParkEase</span>
-        </div>
-      </motion.aside>
-      {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 lg:p-12">
+    <AdminNavbarLayout>
+      <main className="flex-1 p-4 md:p-8 lg:p-12" style={{ background: theme.colors.secondary, minHeight: '100vh' }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -294,44 +265,30 @@ const AdminUserManagement: React.FC = () => {
                 size="sm"
                 onClick={() => navigate('/admin/dashboard')}
                 className="flex items-center gap-2"
+                style={{ color: theme.colors.primary }}
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span className="hidden md:inline">Back to Dashboard</span>
                 <span className="md:hidden">Back</span>
               </Button>
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-white">User Management</h1>
-                <p className="text-sm md:text-base text-white mt-1">Manage user accounts and approvals</p>
+                <h1 style={{ color: theme.colors.primary }} className="text-2xl md:text-3xl font-bold">User Management</h1>
+                <p className="text-sm md:text-base" style={{ color: theme.colors.text.secondary }}>Manage user accounts and approvals</p>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            <form onSubmit={handleSearch} className="flex gap-2 w-full md:w-auto justify-end">
               <Input
                 type="text"
                 placeholder="Search users..."
-                value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="w-full md:w-64 text-white placeholder:text-white/60"
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
+                className="w-full md:w-64"
+                style={{ color: theme.colors.primary, background: theme.colors.background }}
               />
-              <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
-                <SelectTrigger className="w-full md:w-40 text-white">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Users</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                onClick={() => setShowSettings(true)}
-                className="w-full md:w-auto"
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                <span className="hidden md:inline">Filter</span>
-                <span className="md:hidden">Filter</span>
+              <Button type="submit" style={{ background: theme.colors.primary, color: theme.colors.text.light }}>
+                <Search className="h-4 w-4 mr-1" /> Search
               </Button>
-            </div>
+            </form>
           </div>
 
           {/* Stats Cards */}
@@ -467,9 +424,13 @@ const AdminUserManagement: React.FC = () => {
               </Button>
             </div>
           </div>
+
+          {!loading && users.length === 0 && (
+            <div className="text-center text-gray-500 py-4">No users found.</div>
+          )}
         </motion.div>
       </main>
-    </div>
+    </AdminNavbarLayout>
   );
 };
 

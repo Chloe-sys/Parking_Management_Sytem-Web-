@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { authAPI } from '../../services/api';
-import { Car } from 'lucide-react';
+import { ParkingSquare } from 'lucide-react';
 
 const AdminSignUp = () => {
     const navigate = useNavigate();
@@ -40,15 +40,15 @@ const AdminSignUp = () => {
     return (
         <div className="min-h-screen flex">
             {/* Left branding panel */}
-            <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-park-primary text-gray-800 rounded-r-[3rem] p-12">
-                <Car className="h-16 w-16 mb-6" />
+            <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-park-primary text-white rounded-r-[3rem] p-12">
+                <ParkingSquare className="h-16 w-16 mb-6 text-white" />
                 <h1 className="text-5xl font-bold mb-2 tracking-wide">ParkEase</h1>
                 <span className="text-lg tracking-widest mb-12">ADMIN</span>
                 <div className="mt-auto mb-8 w-full flex flex-col items-center">
                     <p className="mb-4 text-lg">Already have Account? Sign In now.</p>
                     <button
                         onClick={() => navigate('/admin/signin')}
-                        className="w-56 py-3 border-2 border-gray-800 rounded-xl text-lg font-semibold hover:bg-gray-800 hover:text-white transition-colors"
+                        className="w-56 py-3 border-2 border-white rounded-xl text-lg font-semibold hover:bg-white hover:text-park-primary transition-colors"
                     >
                         SIGN IN
                     </button>
@@ -59,7 +59,7 @@ const AdminSignUp = () => {
                 <div className="w-full max-w-lg">
                     <div className="flex items-center justify-center mb-8">
                         <h2 className="text-4xl font-bold text-park-primary mr-4">Admin Sign Up</h2>
-                        <Car className="h-10 w-10 text-park-primary" />
+                        <ParkingSquare className="h-10 w-10 text-park-primary" />
                     </div>
                     <p className="text-center text-park-primary mb-8">Please provide your information to sign up as an admin.</p>
                     <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">

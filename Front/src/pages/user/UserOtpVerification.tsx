@@ -5,7 +5,7 @@ import { authAPI } from '../../services/api';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { Car } from 'lucide-react';
+import { ParkingSquare } from 'lucide-react';
 
 const UserOtpVerification: React.FC = () => {
   const navigate = useNavigate();
@@ -89,7 +89,7 @@ const UserOtpVerification: React.FC = () => {
     <div className="min-h-screen flex">
       {/* Left branding panel */}
       <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-park-primary text-white rounded-r-[3rem] p-12">
-        <Car className="h-16 w-16 mb-6" />
+        <ParkingSquare className="h-16 w-16 mb-6" />
         <h1 className="text-5xl font-bold mb-2 tracking-wide">ParkEase</h1>
         <span className="text-lg tracking-widest mb-12">OTP</span>
         <div className="mt-auto mb-8 w-full flex flex-col items-center">
@@ -106,7 +106,7 @@ const UserOtpVerification: React.FC = () => {
             >
               BACK
             </button>
-            <Car className="h-10 w-10 text-park-primary" />
+            <ParkingSquare className="h-10 w-10 text-park-primary" />
           </div>
           <h2 className="text-3xl font-bold text-park-primary mb-2 text-center">Check your Mailbox</h2>
           <p className="text-center text-park-primary mb-8">Please enter the OTP to proceed</p>

@@ -12,14 +12,31 @@ const ParkingSlotController = {
   getAvailableSlots: async (req, res) => {
     try {
       const connection = await pool.getConnection();
+      let { page = 1, limit = 10, search = '' } = req.query;
+      page = Math.max(1, parseInt(page));
+      limit = Math.max(1, Math.min(50, parseInt(limit)));
+      const offset = (page - 1) * limit;
+      // Sanitize search input
+      search = String(search).replace(/[^a-zA-Z0-9\s-]/g, '');
+      let whereClause = 'status = \'available\'';
+      let params = [];
+      if (search) {
+        whereClause += ' AND slotNumber LIKE ?';
+        params.push(`%${search}%`);
+      }
+      // Get total count
+      const [countRows] = await connection.query(
+        `SELECT COUNT(*) as count FROM parking_slots WHERE ${whereClause}`,
+        params
+      );
+      const total = countRows[0].count;
+      // Get paginated results
       const [slots] = await connection.query(
-        `SELECT id, slotNumber, status, location
-        FROM parking_slots
-        WHERE status = 'available'
-        ORDER BY slotNumber`
+        `SELECT * FROM parking_slots WHERE ${whereClause} ORDER BY slotNumber LIMIT ? OFFSET ?`,
+        [...params, limit, offset]
       );
       connection.release();
-      res.json(slots);
+      res.json({ slots, total, page, limit });
     } catch (error) {
       res.status(500).json({ message: 'Error fetching available slots', error: error.message });
     }

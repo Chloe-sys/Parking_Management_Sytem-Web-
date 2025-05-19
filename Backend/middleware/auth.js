@@ -109,6 +109,9 @@ const auth = async (req, res, next) => {
 
             // Attach user to request
             req.user = user;
+            if (user.role === 'admin') {
+                req.admin = user;
+            }
             req.token = token;
             next();
         } catch (error) {

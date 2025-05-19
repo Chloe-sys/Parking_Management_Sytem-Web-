@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { hashPassword, comparePassword, errorResponse, successResponse } = require('../utils/helper');
+const { SlotRequest } = require('../models');
 
 // Helper function to execute queries
 const executeQuery = async (query, params) => {
@@ -14,7 +15,7 @@ const userController = {
             const userId = req.user.id;
             console.log('Fetching dashboard for user ID:', userId);
 
-            // Get user's assigned slot
+            // Get all user's assigned slots
             const [slots] = await pool.query(
                 `SELECT * FROM parking_slots WHERE userId = ?`,
                 [userId]
@@ -38,12 +39,12 @@ const userController = {
 
             // Format the response
             const response = {
-                slot: slots.length > 0 ? {
-                    id: slots[0].id,
-                    slotNumber: slots[0].slotNumber,
-                    status: slots[0].status,
-                    assignedAt: slots[0].createdAt
-                } : null,
+                slots: slots.map(slot => ({
+                    id: slot.id,
+                    slotNumber: slot.slotNumber,
+                    status: slot.status,
+                    assignedAt: slot.createdAt
+                })),
                 notifications: notifications.map(notification => ({
                     id: notification.id,
                     type: notification.type,
@@ -97,12 +98,11 @@ const userController = {
             }
 
             // Check if email is already taken by another user
-            const [existingUsers] = await executeQuery(
+            const existingUsers = await executeQuery(
                 'SELECT id FROM users WHERE email = ? AND id != ?',
                 [email, req.user.id]
             );
-
-            if (existingUsers.length > 0) {
+            if (Array.isArray(existingUsers) && existingUsers.length > 0) {
                 return errorResponse(res, 'Email already in use', 400);
             }
 
@@ -255,6 +255,41 @@ const userController = {
         } catch (error) {
             console.error('Error deleting notification:', error);
             return errorResponse(res, 'Error deleting notification', 500, error);
+        }
+    },
+
+    // User requests a slot
+    requestSlot: async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const { slotId } = req.body;
+            if (!slotId) {
+                return errorResponse(res, 'Slot ID is required', 400);
+            }
+            // Check if slot exists and is available
+            const [slots] = await executeQuery('SELECT * FROM parking_slots WHERE id = ?', [slotId]);
+            if (slots.length === 0) {
+                return errorResponse(res, 'Slot not found', 404);
+            }
+            // Create slot request
+            const requestId = await SlotRequest.create({ userId, slotId });
+            return successResponse(res, 'Slot request submitted', { requestId });
+        } catch (error) {
+            console.error('Error requesting slot:', error);
+            return errorResponse(res, 'Error requesting slot', 500, error);
+        }
+    },
+
+    // Get user's slot requests
+    getSlotRequests: async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const { page = 1, limit = 10, search = '' } = req.query;
+            const result = await SlotRequest.getByUserPaginated(userId, { page, limit, search });
+            return successResponse(res, 'Slot requests retrieved', result);
+        } catch (error) {
+            console.error('Error fetching slot requests:', error);
+            return errorResponse(res, 'Error fetching slot requests', 500, error);
         }
     }
 };

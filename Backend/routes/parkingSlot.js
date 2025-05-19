@@ -93,7 +93,7 @@ router.get('/my-slot', isApproved, ParkingSlotController.getMySlot);
  *       403:
  *         description: Forbidden - Admin access required
  */
-router.get('/', isAdmin, ParkingSlotController.getAllSlots);
+router.get('/', isAdmin, isApproved, ParkingSlotController.getAllSlots);
 
 /**
  * @swagger

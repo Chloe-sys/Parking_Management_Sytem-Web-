@@ -20,6 +20,9 @@ import AdminSlotManagement from './pages/admin/AdminSlotManagement';
 import AdminProfile from './pages/admin/AdminProfile';
 import Unauthorized from './pages/Unauthorized';
 import NotFound from './pages/NotFound';
+import AdminSlotRequests from './pages/admin/AdminSlotRequests';
+import UserAvailableSlots from './pages/user/UserAvailableSlots';
+import UserSlotRequests from './pages/user/UserSlotRequests';
 
 // Protected Route Component
 const ProtectedRoute = ({ role }: { role: 'user' | 'admin' }) => {
@@ -57,6 +60,8 @@ const App = () => {
           <Route element={<ProtectedRoute role="user" />}>
             <Route path="/user/dashboard" element={<UserDashboard />} />
             <Route path="/user/profile" element={<UserProfile />} />
+            <Route path="/user/available-slots" element={<UserAvailableSlots />} />
+            <Route path="/user/slot-requests" element={<UserSlotRequests />} />
           </Route>
 
           {/* Protected Admin Routes */}
@@ -65,6 +70,7 @@ const App = () => {
             <Route path="/admin/users" element={<AdminUserManagement />} />
             <Route path="/admin/parking-slots" element={<AdminSlotManagement />} />
             <Route path="/admin/profile" element={<AdminProfile />} />
+            <Route path="/admin/slot-requests" element={<AdminSlotRequests />} />
           </Route>
 
           {/* Error Routes */}

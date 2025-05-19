@@ -3,6 +3,9 @@ const bcrypt = require('bcryptjs');
 const pool = require('../config/database');
 const { hashPassword, comparePassword, generateToken, errorResponse, successResponse } = require('../utils/helper');
 const { sendEmail } = require('../utils/email');
+const { SlotRequest } = require('../models');
+const User = require('../models/User');
+const ParkingSlot = require('../models/ParkingSlot');
 
 // Helper function to execute queries
 const executeQuery = async (query, params) => {
@@ -576,30 +579,34 @@ const AdminController = {
   updateProfile: async (req, res) => {
     try {
       const { name, email } = req.body;
-
-      // Check email availability
-      if (email !== req.admin.email) {
+      // Get current admin from admins table
+      const admins = await executeQuery(
+        'SELECT * FROM admins WHERE id = ?',
+        [req.admin.id]
+      );
+      if (admins.length === 0) {
+        return res.status(404).json({ message: 'Admin not found' });
+      }
+      const currentAdmin = admins[0];
+      // Check email availability (exclude self)
+      if (email !== currentAdmin.email) {
         const existingAdmins = await executeQuery(
-          'SELECT * FROM users WHERE email = ? AND id != ? AND role = ?',
-          [email, req.admin.id, 'admin']
+          'SELECT * FROM admins WHERE email = ? AND id != ?',
+          [email, req.admin.id]
         );
-
         if (existingAdmins.length > 0) {
           return res.status(400).json({ message: 'Email already in use' });
         }
       }
-
       // Update profile
       await executeQuery(
-        'UPDATE users SET name = ?, email = ? WHERE id = ? AND role = ?',
-        [name, email, req.admin.id, 'admin']
+        'UPDATE admins SET name = ?, email = ? WHERE id = ?',
+        [name, email, req.admin.id]
       );
-
       const updatedAdmin = await executeQuery(
-        'SELECT id, name, email, role FROM users WHERE id = ? AND role = ?',
-        [req.admin.id, 'admin']
+        'SELECT id, name, email, role FROM admins WHERE id = ?',
+        [req.admin.id]
       );
-
       res.json({
         message: 'Profile updated successfully',
         admin: updatedAdmin[0]
@@ -619,32 +626,26 @@ const AdminController = {
   changePassword: async (req, res) => {
     try {
       const { currentPassword, newPassword } = req.body;
-
-      // Get admin
+      // Get admin from admins table
       const admins = await executeQuery(
-        'SELECT * FROM users WHERE id = ? AND role = ?',
-        [req.admin.id, 'admin']
+        'SELECT * FROM admins WHERE id = ?',
+        [req.admin.id]
       );
-
       if (admins.length === 0) {
         return res.status(404).json({ message: 'Admin not found' });
       }
-
       const admin = admins[0];
-
       // Verify current password
       const isPasswordValid = await comparePassword(currentPassword, admin.password);
       if (!isPasswordValid) {
         return res.status(401).json({ message: 'Current password is incorrect' });
       }
-
       // Update password
       const hashedPassword = await hashPassword(newPassword);
       await executeQuery(
-        'UPDATE users SET password = ? WHERE id = ? AND role = ?',
-        [hashedPassword, req.admin.id, 'admin']
+        'UPDATE admins SET password = ? WHERE id = ?',
+        [hashedPassword, req.admin.id]
       );
-
       res.json({ message: 'Password changed successfully' });
     } catch (error) {
       console.error('Change password error:', error);
@@ -750,6 +751,80 @@ const AdminController = {
     } catch (error) {
       console.error('Error getting users with slots:', error);
       res.status(500).json({ message: 'Error fetching users with slots' });
+    }
+  },
+
+  // Admin: Get all slot requests
+  getSlotRequests: async (req, res) => {
+    try {
+      const { page = 1, limit = 10, search = '' } = req.query;
+      const result = await SlotRequest.getAllPaginated({ page, limit, search });
+      return successResponse(res, 'Slot requests retrieved', result);
+    } catch (error) {
+      console.error('Error fetching slot requests:', error);
+      return errorResponse(res, 'Error fetching slot requests', 500, error);
+    }
+  },
+
+  // Admin: Approve or reject a slot request
+  handleSlotRequest: async (req, res) => {
+    try {
+      const { requestId } = req.params;
+      const { status } = req.body; // 'approved' or 'rejected'
+      if (!['approved', 'rejected'].includes(status)) {
+        return errorResponse(res, 'Invalid status', 400);
+      }
+      // Get the slot request
+      const request = await SlotRequest.getById(requestId);
+      if (!request) {
+        return errorResponse(res, 'Slot request not found', 404);
+      }
+      // If approving, assign the slot to the user
+      if (status === 'approved') {
+        // Assign slot to user (allow multiple slots per user)
+        await executeQuery(
+          'UPDATE parking_slots SET status = "occupied", userId = ? WHERE id = ?',
+          [request.userId, request.slotId]
+        );
+        // Get user and slot info
+        const user = await User.findById(request.userId);
+        const slot = await ParkingSlot.findById(request.slotId);
+        // Send email
+        try {
+          await sendEmail({
+            to: user.email,
+            subject: 'Parking Slot Request Approved',
+            html: `<h1>Parking Slot Request Approved</h1><p>Dear ${user.name},</p><p>Your request for parking slot <b>${slot.slotNumber}</b> has been approved.</p><p>You can now use this slot.</p>`
+          });
+        } catch (emailError) {
+          console.error('Error sending slot approval email:', emailError);
+        }
+        // Add notification
+        await executeQuery(
+          `INSERT INTO notifications (userId, type, message, isRead) VALUES (?, 'slot_assigned', ?, false)`,
+          [user.id, `Your request for parking slot ${slot.slotNumber} has been approved.`]
+        );
+      }
+      // Update slot request status
+      await SlotRequest.updateStatus(requestId, status);
+      return successResponse(res, `Slot request ${status}`);
+    } catch (error) {
+      console.error('Error handling slot request:', error);
+      return errorResponse(res, 'Error handling slot request', 500, error);
+    }
+  },
+
+  /**
+   * Get all parking slots with pagination, search, and status filter
+   */
+  getAllSlotsPaginated: async (req, res) => {
+    try {
+      const { page = 1, limit = 10, search = '', status = 'all' } = req.query;
+      const result = await ParkingSlot.getAllPaginated({ page, limit, search, status });
+      return successResponse(res, 'Parking slots retrieved', result);
+    } catch (error) {
+      console.error('Error fetching parking slots:', error);
+      return errorResponse(res, 'Error fetching parking slots', 500, error);
     }
   }
 };

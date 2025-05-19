@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Car } from 'lucide-react';
+import { ParkingSquare } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { authAPI } from '../../services/api';
@@ -60,29 +60,20 @@ const AdminSignIn: React.FC = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left branding panel */}
-      <motion.div
-        initial={{ x: -100, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.7, ease: 'easeOut' }}
-        className="hidden md:flex flex-col justify-center items-center w-1/2 bg-park-primary text-gray-800 rounded-r-[3rem] p-12"
-      >
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>
-          <Car className="h-16 w-16 mb-6" />
-        </motion.div>
-        <motion.h1 initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3, duration: 0.5 }} className="text-5xl font-bold mb-2 tracking-wide">ParkEase</motion.h1>
+      <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-park-primary text-white rounded-r-[3rem] p-12">
+        <ParkingSquare className="h-16 w-16 mb-6 text-white" />
+        <h1 className="text-5xl font-bold mb-2 tracking-wide">ParkEase</h1>
         <span className="text-lg tracking-widest mb-12">ADMIN</span>
         <div className="mt-auto mb-8 w-full flex flex-col items-center">
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.5 }} className="mb-4 text-lg">New to our platform? Sign Up now.</motion.p>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.97 }}
+          <p className="mb-4 text-lg">Don't have an account? Sign Up now.</p>
+          <button
             onClick={() => navigate('/admin/signup')}
-            className="w-56 py-3 border-2 border-gray-800 rounded-xl text-lg font-semibold hover:bg-gray-800 hover:text-white transition-colors"
+            className="w-56 py-3 border-2 border-white rounded-xl text-lg font-semibold hover:bg-white hover:text-park-primary transition-colors"
           >
             SIGN UP
-          </motion.button>
+          </button>
         </div>
-      </motion.div>
+      </div>
       {/* Right form panel */}
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -92,8 +83,8 @@ const AdminSignIn: React.FC = () => {
       >
         <div className="w-full max-w-lg">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.5 }} className="flex items-center justify-center mb-8">
-            <h2 className="text-4xl font-bold text-park-primary mr-4">Welcome Back !!</h2>
-            <Car className="h-10 w-10 text-park-primary" />
+            <h2 className="text-4xl font-bold text-park-primary mr-4">Admin Sign In</h2>
+            <ParkingSquare className="h-10 w-10 text-park-primary" />
           </motion.div>
           <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }} className="text-center text-park-primary mb-8">Please enter your credentials to log in</motion.p>
           <form onSubmit={handleSubmit} className="flex flex-col gap-6">

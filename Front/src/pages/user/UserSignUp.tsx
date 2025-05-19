@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Car } from 'lucide-react';
+import { ParkingSquare } from 'lucide-react';
 
 const UserSignUp: React.FC = () => {
   const navigate = useNavigate();
@@ -50,13 +50,13 @@ const UserSignUp: React.FC = () => {
     <div className="min-h-screen flex">
       {/* Left branding panel */}
       <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-park-primary text-white rounded-r-[3rem] p-12">
-        <Car className="h-16 w-16 mb-6" />
+        <ParkingSquare className="h-16 w-16 mb-6 text-white" />
         <h1 className="text-5xl font-bold mb-2 tracking-wide">ParkEase</h1>
-        <span className="text-lg tracking-widest mb-12">PARKING</span>
+        <span className="text-lg tracking-widest mb-12">USER</span>
         <div className="mt-auto mb-8 w-full flex flex-col items-center">
           <p className="mb-4 text-lg">Already have Account? Sign In now.</p>
           <button
-            onClick={() => navigate('/signin')}
+            onClick={() => navigate('/user/signin')}
             className="w-56 py-3 border-2 border-white rounded-xl text-lg font-semibold hover:bg-white hover:text-park-primary transition-colors"
           >
             SIGN IN
@@ -67,8 +67,8 @@ const UserSignUp: React.FC = () => {
       <div className="flex flex-col justify-center items-center w-full md:w-1/2 bg-park-secondary rounded-l-[3rem] p-8">
         <div className="w-full max-w-lg">
           <div className="flex items-center justify-center mb-8">
-            <h2 className="text-4xl font-bold text-park-primary mr-4">Sign Up</h2>
-            <Car className="h-10 w-10 text-park-primary" />
+            <h2 className="text-4xl font-bold text-park-primary mr-4">User Sign Up</h2>
+            <ParkingSquare className="h-10 w-10 text-park-primary" />
           </div>
           <p className="text-center text-park-primary mb-8">Please provide your information to sign up.</p>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">

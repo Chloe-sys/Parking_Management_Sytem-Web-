@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Filter, ArrowUpDown, Settings, Car, Clock, AlertCircle, X, LogOut, Users, LayoutDashboard, Pencil, Trash2, ArrowLeft } from 'lucide-react';
+import { Plus, Search, Filter, ArrowUpDown, Settings, ParkingSquare, Clock, AlertCircle, X, LogOut, Users, LayoutDashboard, Pencil, Trash2, ArrowLeft } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { useAuth } from '../../lib/auth-context';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from 'react-router-dom';
+import { AdminNavbarLayout } from '@/components/admin/AdminNavbar';
+import { theme } from '../../styles/theme';
 
 interface ParkingSlot {
   id: number;
@@ -35,6 +37,8 @@ interface ParkingSlot {
   updatedAt: string;
 }
 
+const PAGE_SIZE = 10;
+
 const AdminSlotManagement: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -45,41 +49,50 @@ const AdminSlotManagement: React.FC = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingSlotId, setEditingSlotId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [formData, setFormData] = useState({
     slotNumber: '',
     status: 'available' as 'available' | 'occupied' | 'maintenance'
   });
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     fetchSlots();
-  }, []);
+    // eslint-disable-next-line
+  }, [page, search, statusFilter]);
 
   const fetchSlots = async () => {
     try {
       setLoading(true);
-      const response = await adminAPI.getSlots();
-      console.log('Fetched slots response:', response);
-      
-      if (Array.isArray(response)) {
-        // Ensure IDs are numbers and sort slots by slot number
-        const sortedSlots = response.map(slot => ({
-          ...slot,
-          id: Number(slot.id)
-        })).sort((a, b) => 
-          a.slotNumber.localeCompare(b.slotNumber, undefined, { numeric: true })
-        );
-        setSlots(sortedSlots);
-      } else {
-        console.error('Invalid slots response:', response);
-        toast.error('Failed to fetch parking slots: Invalid response format');
+      const response = await adminAPI.getSlotsPaginated({ page, limit: PAGE_SIZE, search, status: statusFilter });
+      let slotsData = [];
+      let totalData = total;
+      if (Array.isArray(response.data)) {
+        slotsData = response.data;
+        totalData = response.data.length;
+      } else if (response.data?.slots) {
+        slotsData = response.data.slots;
+        totalData = response.data.total || response.data.slots.length;
       }
+      setSlots(slotsData);
+      setTotal(totalData);
+      console.log('Fetched slots:', slotsData);
     } catch (error: any) {
       console.error('Error fetching slots:', error);
       toast.error(error.response?.data?.message || 'Failed to fetch parking slots');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Sanitize input: allow only alphanumeric, space, dash
+    const sanitized = searchQuery.replace(/[^a-zA-Z0-9\s-]/g, '').trim();
+    setPage(1);
+    setSearch(sanitized);
   };
 
   const handleCreateSlot = async () => {
@@ -191,12 +204,7 @@ const AdminSlotManagement: React.FC = () => {
     );
   };
 
-  // Filter slots based on search query and status filter
-  const filteredSlots = slots.filter(slot => {
-    const matchesSearch = slot.slotNumber.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || slot.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   if (loading) {
     return (
@@ -207,85 +215,33 @@ const AdminSlotManagement: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex bg-park-secondary">
-      {/* Sidebar */}
-      <motion.aside
-        initial={{ x: -80, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="hidden md:flex flex-col w-64 bg-park-primary text-gray-800 py-8 px-6 rounded-r-3xl shadow-lg"
-      >
-        <div className="flex flex-col items-center mb-12">
-          <Car className="h-12 w-12 mb-2" />
-          <h2 className="text-2xl font-bold tracking-wide">ParkEase</h2>
-          <span className="text-sm tracking-widest mt-1">ADMIN</span>
-        </div>
-        <nav className="flex-1 flex flex-col gap-4">
-          <button 
-            className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors text-white" 
-            onClick={() => navigate('/admin/dashboard')}
-          >
-            <LayoutDashboard className="w-5 h-5" /> Dashboard
-          </button>
-          <button 
-            className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors text-white" 
-            onClick={() => navigate('/admin/users')}
-          >
-            <Users className="w-5 h-5" /> Users
-          </button>
-          <button 
-            className="flex items-center gap-3 py-2 px-4 rounded-lg bg-park-secondary/20 transition-colors text-white" 
-            onClick={() => navigate('/admin/parking-slots')}
-          >
-            <Car className="w-5 h-5" /> Parking Slots
-          </button>
-          <button 
-            className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors text-white" 
-            onClick={() => { localStorage.clear(); navigate('/'); }}
-          >
-            <LogOut className="w-5 h-5" /> Logout
-          </button>
-        </nav>
-        <div className="mt-auto flex flex-col items-center">
-          <span className="text-xs text-gray-600">&copy; {new Date().getFullYear()} ParkEase</span>
-        </div>
-      </motion.aside>
-      {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 lg:p-12">
+    <AdminNavbarLayout>
+      <main className="flex-1 p-6 md:p-12" style={{ background: theme.colors.secondary, minHeight: '100vh' }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="space-y-6"
+          className="space-y-8"
         >
           {/* Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/admin/dashboard')}
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span className="hidden md:inline">Back to Dashboard</span>
-                <span className="md:hidden">Back</span>
-              </Button>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-park-primary">Parking Slot Management</h1>
-                <p className="text-sm md:text-base text-gray-600 mt-1">Manage parking slots and assignments</p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <motion.h1 style={{ color: theme.colors.primary }} className="text-3xl font-bold">
+              Parking Slot Management
+            </motion.h1>
+            <form onSubmit={handleSearch} className="flex gap-2 w-full md:w-auto justify-end">
               <Input
                 type="text"
                 placeholder="Search slots..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full md:w-64 text-white placeholder:text-white/60"
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full md:w-64"
+                style={{ color: theme.colors.primary, background: theme.colors.background }}
               />
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full md:w-40 text-white">
+              <Button type="submit" style={{ background: theme.colors.primary, color: theme.colors.text.light }}>
+                <Search className="h-4 w-4 mr-1" /> Search
+              </Button>
+              <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(1); }}>
+                <SelectTrigger className="w-full md:w-40">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -298,43 +254,44 @@ const AdminSlotManagement: React.FC = () => {
               <Button
                 onClick={() => setIsCreateDialogOpen(true)}
                 className="w-full md:w-auto"
+                style={{ background: theme.colors.accent, color: theme.colors.text.light }}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 <span className="hidden md:inline">Create Slot</span>
                 <span className="md:hidden">Add</span>
               </Button>
-            </div>
+            </form>
           </div>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="bg-white">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">Total Slots</CardTitle>
+            <Card className="rounded-2xl shadow-lg border-0 bg-white">
+              <CardHeader className="pb-2 border-b bg-park-secondary rounded-t-2xl">
+                <CardTitle className="text-sm font-medium text-park-primary flex items-center gap-2"><ParkingSquare className="w-4 h-4" />Total Slots</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-park-primary">{slots.length}</div>
+                <div className="text-2xl font-bold text-park-primary">{total}</div>
               </CardContent>
             </Card>
-            <Card className="bg-white">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">Available Slots</CardTitle>
+            <Card className="rounded-2xl shadow-lg border-0 bg-white">
+              <CardHeader className="pb-2 border-b bg-park-secondary rounded-t-2xl">
+                <CardTitle className="text-sm font-medium text-park-primary flex items-center gap-2"><ParkingSquare className="w-4 h-4" />Available Slots</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-park-primary">{slots.filter(slot => slot.status === 'available').length}</div>
               </CardContent>
             </Card>
-            <Card className="bg-white">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">Occupied Slots</CardTitle>
+            <Card className="rounded-2xl shadow-lg border-0 bg-white">
+              <CardHeader className="pb-2 border-b bg-park-secondary rounded-t-2xl">
+                <CardTitle className="text-sm font-medium text-park-primary flex items-center gap-2"><ParkingSquare className="w-4 h-4" />Occupied Slots</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-park-primary">{slots.filter(slot => slot.status === 'occupied').length}</div>
               </CardContent>
             </Card>
-            <Card className="bg-white">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">Maintenance</CardTitle>
+            <Card className="rounded-2xl shadow-lg border-0 bg-white">
+              <CardHeader className="pb-2 border-b bg-park-secondary rounded-t-2xl">
+                <CardTitle className="text-sm font-medium text-park-primary flex items-center gap-2"><ParkingSquare className="w-4 h-4" />Maintenance</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-park-primary">{slots.filter(slot => slot.status === 'maintenance').length}</div>
@@ -343,24 +300,27 @@ const AdminSlotManagement: React.FC = () => {
           </div>
 
           {/* Slots Table */}
-          <Card className="bg-white">
+          <Card className="rounded-2xl shadow-lg border-0 bg-white">
+            <CardHeader className="border-b bg-park-secondary rounded-t-2xl">
+              <CardTitle className="flex items-center gap-2 text-park-primary"><ParkingSquare className="w-5 h-5" />All Parking Slots</CardTitle>
+            </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[50px] text-white">ID</TableHead>
-                      <TableHead className="text-white">Slot Number</TableHead>
-                      <TableHead className="text-white">Status</TableHead>
-                      <TableHead className="hidden md:table-cell text-white">Assigned To</TableHead>
-                      <TableHead className="hidden md:table-cell text-white">Plate Number</TableHead>
-                      <TableHead className="hidden md:table-cell text-white">Assigned At</TableHead>
-                      <TableHead className="text-right text-white">Actions</TableHead>
+                      <TableHead className="w-[50px]">ID</TableHead>
+                      <TableHead>Slot Number</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="hidden md:table-cell">Assigned To</TableHead>
+                      <TableHead className="hidden md:table-cell">Plate Number</TableHead>
+                      <TableHead className="hidden md:table-cell">Assigned At</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredSlots.map((slot) => (
-                      <TableRow key={slot.id}>
+                    {slots.map((slot, idx) => (
+                      <TableRow key={slot.id ? String(slot.id) : `${slot.slotNumber}-${idx}`}>
                         <TableCell className="font-medium">{slot.id}</TableCell>
                         <TableCell>{slot.slotNumber}</TableCell>
                         <TableCell>
@@ -399,20 +359,16 @@ const AdminSlotManagement: React.FC = () => {
                               variant="outline"
                               className="h-8 px-2 md:px-3"
                               onClick={() => openEditDialog(slot)}
-                              disabled={loading}
                             >
                               <Pencil className="h-4 w-4" />
-                              <span className="hidden md:inline ml-1">Edit</span>
                             </Button>
                             <Button
                               size="sm"
-                              variant="outline"
+                              variant="destructive"
                               className="h-8 px-2 md:px-3"
                               onClick={() => handleDeleteSlot(slot.id)}
-                              disabled={loading}
                             >
                               <Trash2 className="h-4 w-4" />
-                              <span className="hidden md:inline ml-1">Delete</span>
                             </Button>
                           </div>
                         </TableCell>
@@ -421,8 +377,23 @@ const AdminSlotManagement: React.FC = () => {
                   </TableBody>
                 </Table>
               </div>
+              {/* Pagination Controls */}
+              <div className="flex justify-between items-center mt-4 px-4 pb-4">
+                <Button disabled={page === 1} onClick={() => setPage(page - 1)}>
+                  Previous
+                </Button>
+                <span>
+                  Page {page} of {totalPages}
+                </span>
+                <Button disabled={page === totalPages || totalPages === 0} onClick={() => setPage(page + 1)}>
+                  Next
+                </Button>
+              </div>
             </CardContent>
           </Card>
+          {!loading && slots.length === 0 && (
+            <div className="text-center text-gray-500 py-4">No slots found.</div>
+          )}
         </motion.div>
       </main>
 
@@ -514,7 +485,7 @@ const AdminSlotManagement: React.FC = () => {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </AdminNavbarLayout>
   );
 };
 

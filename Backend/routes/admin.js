@@ -21,10 +21,15 @@ router.get('/users-with-slots', auth, isAdmin, AdminController.getUsersWithSlots
 
 // Parking slot management routes
 router.get('/parking-slots/all', auth, isAdmin, ParkingSlotController.getAllSlots);
+router.get('/parking-slots', auth, isAdmin, AdminController.getAllSlotsPaginated);
 router.post('/parking-slots', auth, isAdmin, ParkingSlotController.createSlot);
 router.put('/parking-slots/:slotId', auth, isAdmin, ParkingSlotController.updateSlot);
 router.delete('/parking-slots/:slotId', auth, isAdmin, ParkingSlotController.deleteSlot);
 router.post('/parking-slots/:slotId/assign', auth, isAdmin, ParkingSlotController.assignSlotToUser);
+
+// Slot request endpoints
+router.get('/slot-requests', auth, isAdmin, AdminController.getSlotRequests);
+router.post('/slot-requests/:requestId/handle', auth, isAdmin, AdminController.handleSlotRequest);
 
 module.exports = router; 
 

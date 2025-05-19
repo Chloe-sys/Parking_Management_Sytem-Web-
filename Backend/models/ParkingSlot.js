@@ -86,6 +86,36 @@ class ParkingSlot {
     `, [limit]);
     return rows;
   }
+
+  static async getAllPaginated({ page = 1, limit = 10, search = '', status = 'all' }) {
+    page = Math.max(1, parseInt(page));
+    limit = Math.max(1, Math.min(50, parseInt(limit)));
+    const offset = (page - 1) * limit;
+    // Sanitize search input
+    search = String(search).replace(/[^a-zA-Z0-9\s-]/g, '');
+    let whereClause = '1=1';
+    let params = [];
+    if (search) {
+      whereClause += ' AND slotNumber LIKE ?';
+      params.push(`%${search}%`);
+    }
+    if (status && status !== 'all') {
+      whereClause += ' AND status = ?';
+      params.push(status);
+    }
+    // Get total count
+    const [countRows] = await db.query(
+      `SELECT COUNT(*) as count FROM parking_slots WHERE ${whereClause}`,
+      params
+    );
+    const total = countRows[0].count;
+    // Get paginated results
+    const [rows] = await db.query(
+      `SELECT * FROM parking_slots WHERE ${whereClause} ORDER BY slotNumber ASC LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
+    );
+    return { slots: rows, total, page, limit };
+  }
 }
 
 module.exports = ParkingSlot; 

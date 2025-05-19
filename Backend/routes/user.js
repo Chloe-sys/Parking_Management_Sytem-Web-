@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-const { auth, checkRole } = require('../middleware/auth');
+const { auth, isApproved } = require('../middleware/auth');
 const ParkingSlotController = require('../controllers/parkingSlotController');
 
 /**
@@ -40,7 +40,7 @@ const ParkingSlotController = require('../controllers/parkingSlotController');
  *       403:
  *         description: Forbidden - User role required
  */
-router.get('/dashboard', auth, checkRole(['user']), userController.getDashboard);
+router.get('/dashboard', auth, isApproved, userController.getDashboard);
 
 /**
  * @swagger
@@ -62,7 +62,7 @@ router.get('/dashboard', auth, checkRole(['user']), userController.getDashboard)
  *       403:
  *         description: Forbidden - User role required
  */
-router.get('/profile', auth, checkRole(['user']), userController.getProfile);
+router.get('/profile', auth, isApproved, userController.getProfile);
 
 /**
  * @swagger
@@ -99,7 +99,7 @@ router.get('/profile', auth, checkRole(['user']), userController.getProfile);
  *       403:
  *         description: Forbidden - User role required
  */
-router.put('/profile', auth, checkRole(['user']), userController.updateProfile);
+router.put('/profile', auth, isApproved, userController.updateProfile);
 
 /**
  * @swagger
@@ -137,7 +137,7 @@ router.put('/profile', auth, checkRole(['user']), userController.updateProfile);
  *       403:
  *         description: Forbidden - User role required
  */
-router.put('/change-password', auth, checkRole(['user']), userController.changePassword);
+router.put('/change-password', auth, isApproved, userController.changePassword);
 
 /**
  * @swagger
@@ -161,7 +161,7 @@ router.put('/change-password', auth, checkRole(['user']), userController.changeP
  *       403:
  *         description: Forbidden - User role required
  */
-router.get('/notifications', auth, checkRole(['user']), userController.getNotifications);
+router.get('/notifications', auth, isApproved, userController.getNotifications);
 
 /**
  * @swagger
@@ -188,7 +188,7 @@ router.get('/notifications', auth, checkRole(['user']), userController.getNotifi
  *       404:
  *         description: Notification not found
  */
-router.post('/notifications/:notificationId/read', auth, checkRole(['user']), userController.markNotificationAsRead);
+router.post('/notifications/:notificationId/read', auth, isApproved, userController.markNotificationAsRead);
 
 /**
  * @swagger
@@ -212,6 +212,65 @@ router.post('/notifications/:notificationId/read', auth, checkRole(['user']), us
  *       404:
  *         description: No slot assigned
  */
-router.get('/slot', auth, checkRole(['user']), ParkingSlotController.getMySlot);
+router.get('/slot', auth, isApproved, ParkingSlotController.getMySlot);
+
+/**
+ * @swagger
+ * /api/user/slot-requests:
+ *   post:
+ *     summary: Request a parking slot
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 description: Date for the parking slot
+ *               time:
+ *                 type: string
+ *                 format: time
+ *                 description: Time for the parking slot
+ *     responses:
+ *       200:
+ *         description: Slot request created successfully
+ *       400:
+ *         description: Invalid input data
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - User role required
+ */
+router.post('/slot-requests', auth, isApproved, userController.requestSlot);
+
+/**
+ * @swagger
+ * /api/user/slot-requests:
+ *   get:
+ *     summary: Get user's parking slot requests
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of user's parking slot requests
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/ParkingSlotRequest'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - User role required
+ */
+router.get('/slot-requests', auth, isApproved, userController.getSlotRequests);
 
 module.exports = router; 

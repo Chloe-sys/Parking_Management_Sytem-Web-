@@ -8,7 +8,7 @@ const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const parkingSlotRoutes = require('./routes/parkingSlot');
 const userRoutes = require('./routes/user');
-const swaggerSpecs = require('./config/swagger');
+// const swaggerSpecs = require('./config/swagger');
 
 const app = express();
 

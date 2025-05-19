@@ -3,6 +3,7 @@ const Admin = require('./Admin');
 const ParkingSlot = require('./ParkingSlot');
 const Notification = require('./Notification');
 const Otp = require('./Otp');
+const SlotRequest = require('./SlotRequest');
 
 // Export models
 module.exports = {
@@ -10,5 +11,6 @@ module.exports = {
     Admin,
     ParkingSlot,
     Notification,
-    Otp
+    Otp,
+    SlotRequest
 }; 

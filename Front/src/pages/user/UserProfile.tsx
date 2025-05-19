@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Car, User, Lock, ArrowLeft } from 'lucide-react';
+import { ParkingSquare, User, Lock, LayoutDashboard, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +31,10 @@ const UserProfile: React.FC = () => {
 
     const handleProfileUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!profileData.name || !profileData.email) {
+            toast.error('Name and email are required');
+            return;
+        }
         setLoading(true);
         try {
             const response = await authAPI.updateProfile({
@@ -48,7 +52,7 @@ const UserProfile: React.FC = () => {
                 toast.error(response.data.message || 'Failed to update profile');
             }
         } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Failed to update profile');
+            toast.error(error.response?.data?.message || error.message || 'Failed to update profile');
         } finally {
             setLoading(false);
         }
@@ -56,6 +60,10 @@ const UserProfile: React.FC = () => {
 
     const handlePasswordChange = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (passwordData.newPassword.length < 8) {
+            toast.error('New password must be at least 8 characters long');
+            return;
+        }
         if (passwordData.newPassword !== passwordData.confirmPassword) {
             toast.error('New passwords do not match');
             return;
@@ -77,41 +85,81 @@ const UserProfile: React.FC = () => {
                 toast.error(response.data.message || 'Failed to change password');
             }
         } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Failed to change password');
+            toast.error(error.response?.data?.message || error.message || 'Failed to change password');
         } finally {
             setLoading(false);
         }
     };
 
-    return (
-        <div className="min-h-screen flex">
-            {/* Left branding panel */}
-            <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-park-primary text-white rounded-r-[3rem] p-12">
-                <Car className="h-16 w-16 mb-6" />
-                <h1 className="text-5xl font-bold mb-2 tracking-wide">ParkEase</h1>
-                <span className="text-lg tracking-widest mb-12">USER PROFILE</span>
-                <div className="mt-auto mb-8 w-full flex flex-col items-center">
-                    <p className="mb-4 text-lg text-center">"Your premier digital parking experience"</p>
-                </div>
-            </div>
-            {/* Right profile panel */}
-            <div className="flex flex-col w-full md:w-1/2 bg-park-secondary rounded-l-[3rem] p-8">
-                <div className="w-full max-w-lg mx-auto">
-                    <div className="flex items-center justify-between mb-8">
-                        <button
-                            onClick={() => navigate('/user/dashboard')}
-                            className="flex items-center gap-2 px-4 py-2 border border-park-primary text-park-primary rounded-lg font-medium hover:bg-park-primary hover:text-white transition-colors"
-                        >
-                            <ArrowLeft className="w-4 h-4" />
-                            Back to Dashboard
-                        </button>
-                        <Car className="h-10 w-10 text-park-primary" />
-                    </div>
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('role');
+        navigate('/');
+    };
 
-                    <div className="space-y-8">
+    return (
+        <div className="min-h-screen flex bg-park-secondary">
+            {/* Sidebar */}
+            <motion.aside
+                initial={{ x: -80, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.6 }}
+                className="hidden md:flex flex-col w-64 bg-park-primary text-white py-8 px-6 rounded-r-3xl shadow-lg"
+            >
+                <div className="flex flex-col items-center mb-12">
+                    <ParkingSquare className="h-12 w-12 mb-2" />
+                    <h2 className="text-2xl font-bold tracking-wide">ParkEase</h2>
+                    <span className="text-sm tracking-widest mt-1">USER</span>
+                </div>
+                <nav className="flex-1 flex flex-col gap-4">
+                    <button
+                        className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors"
+                        onClick={() => navigate('/user/dashboard')}
+                    >
+                        <LayoutDashboard className="w-5 h-5" /> Dashboard
+                    </button>
+                    <button
+                        className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors"
+                        onClick={() => navigate('/user/profile')}
+                    >
+                        <User className="w-5 h-5" /> Profile
+                    </button>
+                    <button
+                        className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors"
+                        onClick={handleLogout}
+                    >
+                        <LogOut className="w-5 h-5" /> Logout
+                    </button>
+                </nav>
+                <div className="mt-auto flex flex-col items-center">
+                    <span className="text-xs text-park-secondary">&copy; {new Date().getFullYear()} ParkEase</span>
+                </div>
+            </motion.aside>
+            {/* Main Content */}
+            <main className="flex-1 p-6 md:p-12">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="space-y-8"
+                >
+                    <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                        <motion.h1 className="text-3xl font-bold text-park-primary flex items-center gap-2">
+                            <User className="w-7 h-7" /> My Profile
+                        </motion.h1>
+                        <Button
+                            variant="outline"
+                            onClick={() => navigate('/user/dashboard')}
+                            className="flex items-center gap-2 border-park-primary text-park-primary hover:bg-park-primary hover:text-white transition-all"
+                        >
+                            <LayoutDashboard className="w-4 h-4" /> Dashboard
+                        </Button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Profile Settings */}
-                        <Card className="border-2 border-park-primary">
-                            <CardHeader className="bg-park-primary/10">
+                        <Card className="rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-300 border-0 bg-white">
+                            <CardHeader className="border-b bg-park-secondary rounded-t-2xl">
                                 <CardTitle className="flex items-center gap-2 text-park-primary">
                                     <User className="w-5 h-5" />
                                     Profile Settings
@@ -152,10 +200,9 @@ const UserProfile: React.FC = () => {
                                 </form>
                             </CardContent>
                         </Card>
-
                         {/* Change Password */}
-                        <Card className="border-2 border-park-primary">
-                            <CardHeader className="bg-park-primary/10">
+                        <Card className="rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-300 border-0 bg-white">
+                            <CardHeader className="border-b bg-park-secondary rounded-t-2xl">
                                 <CardTitle className="flex items-center gap-2 text-park-primary">
                                     <Lock className="w-5 h-5" />
                                     Change Password
@@ -204,14 +251,14 @@ const UserProfile: React.FC = () => {
                                         className="w-full bg-park-primary hover:bg-park-accent"
                                         disabled={loading}
                                     >
-                                        {loading ? 'Changing...' : 'Change Password'}
+                                        {loading ? 'Updating...' : 'Change Password'}
                                     </Button>
                                 </form>
                             </CardContent>
                         </Card>
                     </div>
-                </div>
-            </div>
+                </motion.div>
+            </main>
         </div>
     );
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Car, Clock, AlertCircle, Settings, ParkingCircle, LogOut, LayoutDashboard } from 'lucide-react';
+import { Users, ParkingSquare, Clock, AlertCircle, Settings, ParkingCircle, LogOut, LayoutDashboard } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { useAuth } from '../../lib/auth-context';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,8 +10,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from 'sonner';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend as RechartsLegend } from 'recharts';
 import { theme } from '../../styles/theme';
-import AdminNavbar from '@/components/admin/AdminNavbar';
-import { useNavigate } from 'react-router-dom';
+import { AdminNavbarLayout } from '@/components/admin/AdminNavbar';
+import { useNavigate, Link } from 'react-router-dom';
 
 interface DashboardStats {
   totalSlots: number;
@@ -65,9 +65,9 @@ const AdminDashboard: React.FC = () => {
       setLoading(true);
       const response = await adminAPI.getDashboard();
       console.log('Dashboard response:', response);
-      
-      if (response) {
-        setStats({
+      let statsData = null;
+      if (response && response.userStats && response.slotStats) {
+        statsData = {
           totalUsers: response.userStats.totalUsers || 0,
           pendingApprovals: parseInt(response.userStats.pendingUsers) || 0,
           totalSlots: response.slotStats.totalSlots || 0,
@@ -75,11 +75,10 @@ const AdminDashboard: React.FC = () => {
           occupiedSlots: parseInt(response.slotStats.occupiedSlots) || 0,
           pendingUsers: parseInt(response.userStats.pendingUsers) || 0,
           recentAssignments: response.recentActivities || []
-        });
-      } else {
-        console.error('Invalid dashboard response:', response);
-        toast.error('Failed to fetch dashboard data');
+        };
       }
+      setStats(statsData);
+      console.log('Stats set:', statsData);
     } catch (error: any) {
       console.error('Error fetching dashboard stats:', error);
       toast.error(error.response?.data?.message || 'Failed to fetch dashboard data');
@@ -224,51 +223,8 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex bg-park-secondary">
-      {/* Sidebar */}
-      <motion.aside
-        initial={{ x: -80, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="hidden md:flex flex-col w-64 bg-park-primary text-gray-800 py-8 px-6 rounded-r-3xl shadow-lg"
-      >
-        <div className="flex flex-col items-center mb-12">
-          <Car className="h-12 w-12 mb-2" />
-          <h2 className="text-2xl font-bold tracking-wide">ParkEase</h2>
-          <span className="text-sm tracking-widest mt-1">ADMIN</span>
-        </div>
-        <nav className="flex-1 flex flex-col gap-4">
-          <button 
-            className="flex items-center gap-3 py-2 px-4 rounded-lg bg-park-secondary/20 transition-colors" 
-            onClick={() => navigate('/admin/dashboard')}
-          >
-            <LayoutDashboard className="w-5 h-5" /> Dashboard
-          </button>
-          <button 
-            className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors" 
-            onClick={() => navigate('/admin/users')}
-          >
-            <Users className="w-5 h-5" /> Users
-          </button>
-          <button 
-            className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors" 
-            onClick={() => navigate('/admin/parking-slots')}
-          >
-            <Car className="w-5 h-5" /> Parking Slots
-          </button>
-          <button 
-            className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors" 
-            onClick={() => { localStorage.clear(); navigate('/'); }}
-          >
-            <LogOut className="w-5 h-5" /> Logout
-          </button>
-        </nav>
-        <div className="mt-auto flex flex-col items-center">
-          <span className="text-xs text-gray-600">&copy; {new Date().getFullYear()} ParkEase</span>
-        </div>
-      </motion.aside>
-      {/* Main Content */}
-      <main className="flex-1 p-6 md:p-12">
+    <AdminNavbarLayout>
+      <main className="flex-1 p-6 md:p-12" style={{ background: theme.colors.secondary, minHeight: '100vh' }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -321,7 +277,7 @@ const AdminDashboard: React.FC = () => {
               >
                 <CardHeader className="bg-park-primary/10">
                   <CardTitle className="flex items-center gap-2 text-park-primary">
-                    <Car className="w-5 h-5" />
+                    <ParkingSquare className="w-5 h-5" />
                     Total Slots
                   </CardTitle>
                 </CardHeader>
@@ -392,9 +348,14 @@ const AdminDashboard: React.FC = () => {
               <RecentAssignments assignments={stats.recentAssignments} />
             </motion.div>
           </div>
+          <div className="my-6">
+            <Link to="/admin/slot-requests">
+              <Button variant="outline" className="w-full">Manage Slot Requests</Button>
+            </Link>
+          </div>
         </motion.div>
       </main>
-    </div>
+    </AdminNavbarLayout>
   );
 };
 

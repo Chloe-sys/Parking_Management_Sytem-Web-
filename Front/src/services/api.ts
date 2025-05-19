@@ -277,7 +277,7 @@ export const userAPI = {
   // Dashboard
   getDashboard: async () => {
     try {
-      const response = await api.get<{ success: boolean; data: { slot: ParkingSlot | null; notifications: Notification[] } }>('/user/dashboard');
+      const response = await api.get<{ success: boolean; data: { slots: ParkingSlot[]; notifications: Notification[] } }>('/user/dashboard');
       console.log('Dashboard response:', response.data);
       return response.data;
     } catch (error: any) {
@@ -312,6 +312,43 @@ export const userAPI = {
   markNotificationAsRead: async (notificationId: string) => {
     const response = await api.post<{ status: string; message: string }>(`/user/notifications/${notificationId}/read`);
     return response.data;
+  },
+
+  // Slot Requests
+  getAvailableSlots: async (params?: { page?: number; limit?: number; search?: string }) => {
+    try {
+      const query = new URLSearchParams();
+      if (params?.page) query.append('page', String(params.page));
+      if (params?.limit) query.append('limit', String(params.limit));
+      if (params?.search) query.append('search', params.search);
+      const response = await api.get(`/parking-slots/available${query.toString() ? `?${query.toString()}` : ''}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching available slots:', error);
+      throw error;
+    }
+  },
+  requestSlot: async (slotId: number) => {
+    try {
+      const response = await api.post('/user/slot-requests', { slotId });
+      return response.data;
+    } catch (error: any) {
+      console.error('Error requesting slot:', error);
+      throw error;
+    }
+  },
+  getSlotRequests: async (params?: { page?: number; limit?: number; search?: string }) => {
+    try {
+      const query = new URLSearchParams();
+      if (params?.page) query.append('page', String(params.page));
+      if (params?.limit) query.append('limit', String(params.limit));
+      if (params?.search) query.append('search', params.search);
+      const response = await api.get(`/user/slot-requests${query.toString() ? `?${query.toString()}` : ''}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching slot requests:', error);
+      throw error;
+    }
   },
 };
 
@@ -425,7 +462,7 @@ export const adminAPI = {
 
   updateProfile: async (data: { name: string; email: string }) => {
     try {
-      const response = await api.put('/admin/profile', data);
+      const response = await api.put('/admin/profile-change', data);
       return response.data;
     } catch (error: any) {
       if (error.response?.data?.message) {
@@ -457,7 +494,47 @@ export const adminAPI = {
       }
       throw error;
     }
-  }
+  },
+
+  // Slot Requests
+  getSlotRequests: async (params?: { page?: number; limit?: number; search?: string }) => {
+    try {
+      const query = new URLSearchParams();
+      if (params?.page) query.append('page', String(params.page));
+      if (params?.limit) query.append('limit', String(params.limit));
+      if (params?.search) query.append('search', params.search);
+      const response = await api.get(`/admin/slot-requests${query.toString() ? `?${query.toString()}` : ''}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching admin slot requests:', error);
+      throw error;
+    }
+  },
+
+  handleSlotRequest: async (requestId: string, status: 'approved' | 'rejected') => {
+    try {
+      const response = await api.post(`/admin/slot-requests/${requestId}/handle`, { status });
+      return response.data;
+    } catch (error: any) {
+      console.error('Error handling slot request:', error);
+      throw error;
+    }
+  },
+
+  getSlotsPaginated: async (params?: { page?: number; limit?: number; search?: string; status?: string }) => {
+    try {
+      const query = new URLSearchParams();
+      if (params?.page) query.append('page', String(params.page));
+      if (params?.limit) query.append('limit', String(params.limit));
+      if (params?.search) query.append('search', params.search);
+      if (params?.status) query.append('status', params.status);
+      const response = await api.get(`/admin/parking-slots${query.toString() ? `?${query.toString()}` : ''}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching paginated slots:', error);
+      throw error;
+    }
+  },
 };
 
 export default api;

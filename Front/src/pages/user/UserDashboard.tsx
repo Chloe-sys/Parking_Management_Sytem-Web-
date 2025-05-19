@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { authAPI, userAPI } from '../../services/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Car, Bell, MapPin, Settings, LogOut, User, LayoutDashboard, Check } from 'lucide-react';
+import { ParkingSquare, Bell, MapPin, Settings, LogOut, User, LayoutDashboard, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { theme } from '../../styles/theme';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface Notification {
   id: string;
@@ -18,14 +19,14 @@ interface Notification {
 }
 
 interface DashboardData {
-  slot: {
+  notifications: Notification[];
+  slots: {
     id: number;
     slotNumber: string;
     status: string;
     assignedAt?: string;
     createdAt: string;
-  } | null;
-  notifications: Notification[];
+  }[];
 }
 
 const UserDashboard: React.FC = () => {
@@ -51,8 +52,8 @@ const UserDashboard: React.FC = () => {
       
       if (response.success && response.data) {
         setDashboardData({
-          slot: response.data.slot,
-          notifications: response.data.notifications || []
+          notifications: response.data.notifications || [],
+          slots: response.data.slots || []
         });
       } else {
         console.error('Invalid dashboard response:', response);
@@ -66,6 +67,15 @@ const UserDashboard: React.FC = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRequestSlot = async (slotId: number) => {
+    try {
+      await userAPI.requestSlot(slotId);
+      toast.success('Slot request submitted!');
+    } catch (error: any) {
+      toast.error('Failed to request slot');
     }
   };
 
@@ -97,6 +107,36 @@ const UserDashboard: React.FC = () => {
     } catch (error: any) {
       console.error('Error marking notification as read:', error);
       toast.error(error.response?.data?.message || 'Failed to mark notification as read');
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 8) {
+        toast.error('New password must be at least 8 characters long');
+        return;
+    }
+    if (newPassword !== currentPassword) {
+        toast.error('New passwords do not match');
+        return;
+    }
+    setLoading(true);
+    try {
+        const response = await authAPI.changePassword({
+            currentPassword: currentPassword,
+            newPassword: newPassword
+        });
+        if (response.data.status === 'success') {
+            toast.success('Password changed successfully');
+            setCurrentPassword('');
+            setNewPassword('');
+        } else {
+            toast.error(response.data.message || 'Failed to change password');
+        }
+    } catch (error: any) {
+        toast.error(error.response?.data?.message || 'Failed to change password');
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -138,7 +178,7 @@ const UserDashboard: React.FC = () => {
         className="hidden md:flex flex-col w-64 bg-park-primary text-white py-8 px-6 rounded-r-3xl shadow-lg"
       >
         <div className="flex flex-col items-center mb-12">
-          <Car className="h-12 w-12 mb-2" />
+          <ParkingSquare className="h-12 w-12 mb-2" />
           <h2 className="text-2xl font-bold tracking-wide">ParkEase</h2>
           <span className="text-sm tracking-widest mt-1">USER</span>
         </div>
@@ -250,30 +290,34 @@ const UserDashboard: React.FC = () => {
                 <CardHeader className="border-b bg-park-secondary rounded-t-2xl">
                   <CardTitle className="flex items-center gap-2 text-park-primary">
                     <MapPin className="w-5 h-5" />
-                    Parking Slot
+                    Parking Slots
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  {dashboardData.slot ? (
+                  {dashboardData.slots && dashboardData.slots.length > 0 ? (
                     <div className="space-y-3">
-                      <p className="text-sm text-park-primary">
-                        <span className="font-medium">Slot Number:</span> {dashboardData.slot.slotNumber}
-                      </p>
-                      <p className="text-sm text-park-primary">
-                        <span className="font-medium">Status:</span> 
-                        <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                          dashboardData.slot.status === 'occupied' ? 'bg-red-500' : 'bg-green-500'
-                        } text-white`}>
-                          {dashboardData.slot.status}
-                        </span>
-                      </p>
-                      <p className="text-sm text-park-primary">
-                        <span className="font-medium">Assigned At:</span> {formatDate(dashboardData.slot.assignedAt || dashboardData.slot.createdAt)}
-                      </p>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Slot Number</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Assigned At</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {dashboardData.slots.map((slot) => (
+                            <TableRow key={slot.id}>
+                              <TableCell>{slot.slotNumber}</TableCell>
+                              <TableCell className="capitalize">{slot.status}</TableCell>
+                              <TableCell>{formatDate(slot.assignedAt)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     </div>
                   ) : (
                     <p className="text-center py-4 text-park-primary">
-                      No parking slot assigned yet
+                      No parking slots assigned yet
                     </p>
                   )}
                 </CardContent>
@@ -328,6 +372,22 @@ const UserDashboard: React.FC = () => {
               </Card>
             </motion.div>
           </div>
+          {/* Available Slots Table */}
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Available Parking Slots</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="max-w-2xl mx-auto flex flex-col gap-4 mt-8">
+                <Link to="/user/available-slots">
+                  <Button variant="outline" className="w-full">View Available Slots</Button>
+                </Link>
+                <Link to="/user/slot-requests">
+                  <Button variant="outline" className="w-full">View My Slot Requests</Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
       </main>
     </div>
