@@ -23,6 +23,10 @@ import NotFound from './pages/NotFound';
 import AdminSlotRequests from './pages/admin/AdminSlotRequests';
 import UserAvailableSlots from './pages/user/UserAvailableSlots';
 import UserSlotRequests from './pages/user/UserSlotRequests';
+import UserTicketsPage from './pages/user/UserTicketsPage';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
+import AdminTicketsPage from './pages/admin/AdminTicketsPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ role }: { role: 'user' | 'admin' }) => {
@@ -50,6 +54,8 @@ const App = () => {
           <Route path="/signup" element={<UserSignUp />} />
           <Route path="/verify-email" element={<UserOtpVerification />} />
           <Route path="/user/pending-approval" element={<PendingApproval />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           
           {/* Admin Auth Routes */}
           <Route path="/admin/signin" element={<AdminSignIn />} />
@@ -62,6 +68,7 @@ const App = () => {
             <Route path="/user/profile" element={<UserProfile />} />
             <Route path="/user/available-slots" element={<UserAvailableSlots />} />
             <Route path="/user/slot-requests" element={<UserSlotRequests />} />
+            <Route path="/user/tickets" element={<UserTicketsPage />} />
           </Route>
 
           {/* Protected Admin Routes */}
@@ -71,6 +78,7 @@ const App = () => {
             <Route path="/admin/parking-slots" element={<AdminSlotManagement />} />
             <Route path="/admin/profile" element={<AdminProfile />} />
             <Route path="/admin/slot-requests" element={<AdminSlotRequests />} />
+            <Route path="/admin/tickets" element={<AdminTicketsPage />} />
           </Route>
 
           {/* Error Routes */}

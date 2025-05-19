@@ -289,14 +289,6 @@ const AdminSlotManagement: React.FC = () => {
                 <div className="text-2xl font-bold text-park-primary">{slots.filter(slot => slot.status === 'occupied').length}</div>
               </CardContent>
             </Card>
-            <Card className="rounded-2xl shadow-lg border-0 bg-white">
-              <CardHeader className="pb-2 border-b bg-park-secondary rounded-t-2xl">
-                <CardTitle className="text-sm font-medium text-park-primary flex items-center gap-2"><ParkingSquare className="w-4 h-4" />Maintenance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-park-primary">{slots.filter(slot => slot.status === 'maintenance').length}</div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Slots Table */}
@@ -309,13 +301,13 @@ const AdminSlotManagement: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[50px]">ID</TableHead>
-                      <TableHead>Slot Number</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="hidden md:table-cell">Assigned To</TableHead>
-                      <TableHead className="hidden md:table-cell">Plate Number</TableHead>
-                      <TableHead className="hidden md:table-cell">Assigned At</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="w-[50px] text-black">ID</TableHead>
+                      <TableHead className='text-black'>Slot Number</TableHead>
+                      <TableHead className='text-black'>Status</TableHead>
+                      <TableHead className='text-black'>Assigned To</TableHead>
+                      <TableHead className='text-black'>Plate Number</TableHead>
+                      <TableHead className='text-black'>Assigned At</TableHead>
+                      <TableHead className="text-right text-black">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -336,23 +328,39 @@ const AdminSlotManagement: React.FC = () => {
                             {slot.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="hidden md:table-cell">
+                        <TableCell>
                           {slot.status === 'occupied' ? (
                             <div className="space-y-1">
                               <p className="font-medium">{slot.userName || 'N/A'}</p>
                               <p className="text-sm text-gray-500">{slot.userEmail || 'N/A'}</p>
+                              <p className="text-xs text-gray-400">ID: {slot.userId || 'N/A'}</p>
                             </div>
                           ) : (
                             '-'
                           )}
                         </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {slot.plateNumber || '-'}
+                        <TableCell>
+                          {slot.status === 'occupied' ? (
+                            <Badge variant="outline" className="font-mono">
+                              {slot.plateNumber || 'N/A'}
+                            </Badge>
+                          ) : (
+                            '-'
+                          )}
                         </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {slot.assignedAt ? new Date(slot.assignedAt).toLocaleDateString() : '-'}
+                        <TableCell>
+                          {slot.assignedAt ? (
+                            <div className="space-y-1">
+                              <p>{new Date(slot.assignedAt).toLocaleDateString()}</p>
+                              <p className="text-sm text-gray-500">
+                                {new Date(slot.assignedAt).toLocaleTimeString()}
+                              </p>
+                            </div>
+                          ) : (
+                            '-'
+                          )}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell>
                           <div className="flex justify-end gap-2">
                             <Button
                               size="sm"
@@ -367,6 +375,7 @@ const AdminSlotManagement: React.FC = () => {
                               variant="destructive"
                               className="h-8 px-2 md:px-3"
                               onClick={() => handleDeleteSlot(slot.id)}
+                              disabled={slot.status === 'occupied'}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

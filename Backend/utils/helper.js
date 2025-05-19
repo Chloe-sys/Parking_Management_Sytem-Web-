@@ -21,21 +21,7 @@ const calculateDueDate = (days = 14) => {
   return formatDate(moment().add(days, 'days'));
 };
 
-/**
- * Calculate statistics based on borrowed books
- * @param {Array} borrowedBooks - Array of borrowed books
- * @returns {Object} statistics
- */
-const calculateStatistics = (borrowedBooks) => {
-  const borrowed = borrowedBooks.filter(book => book.status === 'borrowed').length;
-  const returned = borrowedBooks.filter(book => book.status === 'returned').length;
-  
-  return {
-    totalBorrowed: borrowed + returned,
-    currentlyBorrowed: borrowed,
-    returned: returned
-  };
-};
+
 
 /**
  * Standard success response format
@@ -150,7 +136,6 @@ const generateRandomString = (length = 6) => {
 module.exports = {
   formatDate,
   calculateDueDate,
-  calculateStatistics,
   errorResponse,
   successResponse,
   hashPassword,

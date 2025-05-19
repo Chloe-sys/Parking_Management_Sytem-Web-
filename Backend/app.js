@@ -6,6 +6,8 @@ const db = require('./config/database'); // raw MySQL connection
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const adminRoutes = require('./routes/admin');
+const ticketRoutes = require('./routes/ticketRoutes');
+const slotRequestRoutes = require('./routes/slotRequestRoutes');
 
 const app = express();
 
@@ -40,6 +42,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/tickets', ticketRoutes);
+app.use('/api/slot-requests', slotRequestRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

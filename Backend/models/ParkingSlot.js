@@ -96,22 +96,35 @@ class ParkingSlot {
     let whereClause = '1=1';
     let params = [];
     if (search) {
-      whereClause += ' AND slotNumber LIKE ?';
-      params.push(`%${search}%`);
+      whereClause += ' AND (ps.slotNumber LIKE ? OR u.name LIKE ? OR u.email LIKE ? OR u.plateNumber LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
     }
     if (status && status !== 'all') {
-      whereClause += ' AND status = ?';
+      whereClause += ' AND ps.status = ?';
       params.push(status);
     }
     // Get total count
     const [countRows] = await db.query(
-      `SELECT COUNT(*) as count FROM parking_slots WHERE ${whereClause}`,
+      `SELECT COUNT(*) as count 
+       FROM parking_slots ps
+       LEFT JOIN users u ON ps.userId = u.id
+       WHERE ${whereClause}`,
       params
     );
     const total = countRows[0].count;
-    // Get paginated results
+    // Get paginated results with user information
     const [rows] = await db.query(
-      `SELECT * FROM parking_slots WHERE ${whereClause} ORDER BY slotNumber ASC LIMIT ? OFFSET ?`,
+      `SELECT ps.*, 
+              u.id as userId,
+              u.name as userName, 
+              u.email as userEmail, 
+              u.plateNumber,
+              u.status as userStatus
+       FROM parking_slots ps
+       LEFT JOIN users u ON ps.userId = u.id
+       WHERE ${whereClause}
+       ORDER BY ps.slotNumber ASC 
+       LIMIT ? OFFSET ?`,
       [...params, limit, offset]
     );
     return { slots: rows, total, page, limit };

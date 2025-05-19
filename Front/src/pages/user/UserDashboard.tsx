@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ParkingSquare, Bell, MapPin, Settings, LogOut, User, LayoutDashboard, Check } from 'lucide-react';
+import { ParkingSquare, Bell, MapPin, Settings, LogOut, User, LayoutDashboard, Check, Ticket } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { theme } from '../../styles/theme';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import UserTickets from './UserTickets';
 
 interface Notification {
   id: string;
@@ -71,12 +72,7 @@ const UserDashboard: React.FC = () => {
   };
 
   const handleRequestSlot = async (slotId: number) => {
-    try {
-      await userAPI.requestSlot(slotId);
-      toast.success('Slot request submitted!');
-    } catch (error: any) {
-      toast.error('Failed to request slot');
-    }
+    navigate('/user/available-slots');
   };
 
   const handleLogout = () => {
@@ -197,7 +193,19 @@ const UserDashboard: React.FC = () => {
           </button>
           <button 
             className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors" 
-            onClick={() => { localStorage.clear(); navigate('/'); }}
+            onClick={() => navigate('/user/slot-requests')}
+          >
+            <Bell className="w-5 h-5" /> Slot Requests
+          </button>
+          <button 
+            className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors" 
+            onClick={() => navigate('/user/tickets')}
+          >
+            <Ticket className="w-5 h-5" /> My Tickets
+          </button>
+          <button 
+            className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors" 
+            onClick={handleLogout}
           >
             <LogOut className="w-5 h-5" /> Logout
           </button>
@@ -228,6 +236,14 @@ const UserDashboard: React.FC = () => {
               </Button>
               <Button
                 variant="outline"
+                onClick={() => navigate('/user/tickets')}
+                className="flex items-center gap-2 border-park-primary text-park-primary hover:bg-park-primary hover:text-white transition-all"
+              >
+                <Ticket className="w-4 h-4" />
+                Tickets
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="flex items-center gap-2 border-park-primary text-park-primary hover:bg-park-primary hover:text-white transition-all"
               >
@@ -248,7 +264,7 @@ const UserDashboard: React.FC = () => {
             </div>
           </div>
           {/* Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Profile Card */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -280,11 +296,39 @@ const UserDashboard: React.FC = () => {
                 </CardContent>
               </Card>
             </motion.div>
-            {/* Parking Slot Card */}
+            {/* Tickets Card */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
+            >
+              <Card className="rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-300 border-0 bg-white">
+                <CardHeader className="border-b bg-park-secondary rounded-t-2xl">
+                  <CardTitle className="flex items-center gap-2 text-park-primary">
+                    <Ticket className="w-5 h-5" />
+                    Tickets
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-3">
+                    <p className="text-sm text-park-primary">
+                      View your active ticket and ticket history
+                    </p>
+                    <Button
+                      onClick={() => navigate('/user/tickets')}
+                      className="w-full mt-4 bg-park-primary hover:bg-park-accent"
+                    >
+                      View Tickets
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+            {/* Parking Slot Card */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
             >
               <Card className="rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-300 border-0 bg-white">
                 <CardHeader className="border-b bg-park-secondary rounded-t-2xl">
@@ -327,7 +371,7 @@ const UserDashboard: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.4 }}
             >
               <Card className="rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-300 border-0 bg-white">
                 <CardHeader className="border-b bg-park-secondary rounded-t-2xl">

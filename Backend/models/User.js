@@ -3,12 +3,12 @@ const bcrypt = require('bcryptjs');
 
 class User {
   static async create(userData) {
-    const { name, email, password, plateNumber, status = 'pending' } = userData;
+    const { name, email, password, plateNumber, preferredEntryTime, preferredExitTime, status = 'pending' } = userData;
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const [result] = await db.query(
-      'INSERT INTO users (name, email, password, plateNumber, status, isEmailVerified) VALUES (?, ?, ?, ?, ?, ?)',
-      [name, email, hashedPassword, plateNumber, status, false]
+      'INSERT INTO users (name, email, password, plateNumber, preferredEntryTime, preferredExitTime, status, isEmailVerified) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, email, hashedPassword, plateNumber, preferredEntryTime, preferredExitTime, status, false]
     );
 
     return result.insertId;

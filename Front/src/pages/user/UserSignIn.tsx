@@ -90,91 +90,92 @@ const UserSignIn: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left branding panel */}
-      <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-park-primary text-white rounded-r-[3rem] p-12">
-        <ParkingSquare className="h-16 w-16 mb-6 text-white" />
-        <h1 className="text-5xl font-bold mb-2 tracking-wide">ParkEase</h1>
-        <span className="text-lg tracking-widest mb-12">USER</span>
-        <div className="mt-auto mb-8 w-full flex flex-col items-center">
-          <p className="mb-4 text-lg">Don't have an account? Sign Up now.</p>
-          <button
-            onClick={() => navigate('/user/signup')}
-            className="w-56 py-3 border-2 border-white rounded-xl text-lg font-semibold hover:bg-white hover:text-park-primary transition-colors"
-          >
-            SIGN UP
-          </button>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <ParkingSquare className="mx-auto h-12 w-12 text-primary" />
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Sign in to your account</h2>
         </div>
-      </div>
-      {/* Right form panel */}
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: 'easeOut' }}
-        className="flex flex-col justify-center items-center w-full md:w-1/2 bg-park-secondary rounded-l-[3rem] p-8"
-      >
-        <div className="w-full max-w-lg">
-          <div className="flex items-center justify-center mb-8">
-            <h2 className="text-4xl font-bold text-park-primary mr-4">User Sign In</h2>
-            <ParkingSquare className="h-10 w-10 text-park-primary" />
-          </div>
-          <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }} className="text-center text-park-primary mb-8">Please enter your credentials to log in</motion.p>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label className="block text-sm font-medium text-park-primary mb-1">
-                Email
-              </label>
               <Input
+                id="email"
+                name="email"
                 type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full"
+                autoComplete="email"
                 required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+                placeholder="Email address"
+                value={formData.email}
+                onChange={handleChange}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-park-primary mb-1">
-                Password
-              </label>
               <Input
+                id="password"
+                name="password"
                 type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full"
+                autoComplete="current-password"
                 required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
               />
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="remember"
-                  className="h-4 w-4 text-park-primary border-gray-300 rounded focus:ring-park-primary"
-                  checked={formData.rememberMe}
-                  onChange={(e) => setFormData({ ...formData, rememberMe: e.target.checked })}
-                />
-                <label htmlFor="remember" className="ml-2 block text-sm text-gray-600">
-                  Remember me
-                </label>
-              </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <input
+                id="remember-me"
+                name="rememberMe"
+                type="checkbox"
+                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                checked={formData.rememberMe}
+                onChange={(e) => setFormData(prev => ({ ...prev, rememberMe: e.target.checked }))}
+              />
+              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                Remember me
+              </label>
+            </div>
+
+            <div className="text-sm">
+              <button
+                type="button"
+                onClick={() => navigate('/forgot-password', { state: { role: 'user' } })}
+                className="font-medium text-primary hover:text-primary-dark"
+              >
+                Forgot your password?
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <Button
+              type="submit"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+              disabled={loading}
+            >
+              {loading ? 'Signing in...' : 'Sign in'}
+            </Button>
+          </div>
+
+          <div className="text-center">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{' '}
               <button
                 type="button"
                 onClick={() => navigate('/signup')}
-                className="text-sm font-medium text-park-primary hover:text-park-accent"
+                className="font-medium text-primary hover:text-primary-dark"
               >
-                Don't have an account? Sign up
+                Sign up
               </button>
-            </div>
-            <Button
-              type="submit"
-              className="w-full bg-park-primary hover:bg-park-accent"
-              disabled={loading}
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </Button>
-          </form>
-        </div>
-      </motion.div>
+            </p>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

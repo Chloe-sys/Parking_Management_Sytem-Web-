@@ -157,12 +157,12 @@ const AdminSlotRequests: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Slot Number</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Requested At</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead className="w-[50px] text-black">User</TableHead>
+                      <TableHead className="w-[50px] text-black">Email</TableHead>
+                      <TableHead className="w-[50px] text-black">Slot Number</TableHead>
+                      <TableHead className="w-[50px] text-black">Status</TableHead>
+                      <TableHead className="w-[50px] text-black">Requested At</TableHead>
+                      <TableHead className="w-[50px] text-black">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

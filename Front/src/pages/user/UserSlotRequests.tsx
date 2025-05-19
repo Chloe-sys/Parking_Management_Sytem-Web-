@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ParkingSquare, LayoutDashboard, User, LogOut, Bell } from 'lucide-react';
+import { ParkingSquare, LayoutDashboard, User, LogOut, Bell, Ticket } from 'lucide-react';
 
 const PAGE_SIZE = 10;
 
@@ -79,6 +79,18 @@ const UserSlotRequests: React.FC = () => {
             onClick={() => navigate('/user/profile')}
           >
             <User className="w-5 h-5" /> Profile
+          </button>
+          <button 
+            className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors" 
+            onClick={() => navigate('/user/slot-requests')}
+          >
+            <Bell className="w-5 h-5" /> Slot Requests
+          </button>
+          <button 
+            className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors" 
+            onClick={() => navigate('/user/tickets')}
+          >
+            <Ticket className="w-5 h-5" /> My Tickets
           </button>
           <button 
             className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors" 

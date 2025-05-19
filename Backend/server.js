@@ -6,8 +6,10 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
-const parkingSlotRoutes = require('./routes/parkingSlot');
 const userRoutes = require('./routes/user');
+const ticketRoutes = require('./routes/ticketRoutes');
+const slotRequestRoutes = require('./routes/slotRequestRoutes');
+const parkingSlotRoutes = require('./routes/parkingSlot');
 // const swaggerSpecs = require('./config/swagger');
 
 const app = express();
@@ -32,15 +34,31 @@ const swaggerOptions = {
             title: 'Parking Management System API',
             version: '1.0.0',
             description: 'API documentation for the Parking Management System',
+            contact: {
+                name: 'Chloe Ishimwe',
+                email: 'karlychloee12@gmail.com'
+            }
         },
         servers: [
             {
-                url: `http://localhost:${process.env.PORT || 3000}`,
+                url: `http://localhost:${process.env.PORT || 8082}`,
                 description: 'Development server'
             }
         ],
+        components: {
+            securitySchemes: {
+                bearerAuth: {
+                    type: 'http',
+                    scheme: 'bearer',
+                    bearerFormat: 'JWT'
+                }
+            }
+        },
+        security: [{
+            bearerAuth: []
+        }]
     },
-    apis: ['./routes/*.js'], // path to the route files
+    apis: ['./routes/*.js']
 };
 
 const swaggerSpecs = swaggerJsdoc(swaggerOptions);
@@ -53,8 +71,10 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/parking-slots', parkingSlotRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/tickets', ticketRoutes);
+app.use('/api/slot-requests', slotRequestRoutes);
+app.use('/api/parking-slots', parkingSlotRoutes);
 
 // Test route
 app.get('/', (req, res) => {
@@ -71,7 +91,7 @@ app.use((err, req, res, next) => {
     });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8082;
 
 const startServer = async () => {
     try {
@@ -88,11 +108,14 @@ const startServer = async () => {
                 email VARCHAR(255) UNIQUE NOT NULL,
                 password VARCHAR(255) NOT NULL,
                 plateNumber VARCHAR(20),
+                preferredEntryTime TIMESTAMP NULL,
+                preferredExitTime TIMESTAMP NULL,
                 role ENUM('user', 'admin') NOT NULL DEFAULT 'user',
                 status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
-                isEmailVerified BOOLEAN DEFAULT FALSE,
-                createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                rejectionReason TEXT,
+                isEmailVerified TINYINT(1) DEFAULT 0,
+                createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )
         `);
 
@@ -102,9 +125,35 @@ const startServer = async () => {
                 name VARCHAR(255) NOT NULL,
                 email VARCHAR(255) UNIQUE NOT NULL,
                 password VARCHAR(255) NOT NULL,
-                isEmailVerified BOOLEAN DEFAULT FALSE,
-                createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                role ENUM('admin', 'super_admin') DEFAULT 'admin',
+                isEmailVerified TINYINT(1) DEFAULT 0,
+                createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        `);
+
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS parking_slots (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                slotNumber VARCHAR(20) NOT NULL UNIQUE,
+                status ENUM('available', 'occupied', 'reserved') DEFAULT 'available',
+                userId INT,
+                assignedAt TIMESTAMP NULL,
+                createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (userId) REFERENCES users(id) ON DELETE SET NULL
+            )
+        `);
+
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                userId INT,
+                type ENUM('approval', 'rejection', 'slot_assigned', 'slot_released') NOT NULL,
+                message TEXT NOT NULL,
+                isRead TINYINT(1) DEFAULT 0,
+                createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
             )
         `);
 
@@ -115,56 +164,60 @@ const startServer = async () => {
                 code VARCHAR(6) NOT NULL,
                 type ENUM('verification', 'reset') NOT NULL,
                 role ENUM('user', 'admin') NOT NULL,
-                isUsed BOOLEAN DEFAULT FALSE,
-                expiresAt TIMESTAMP NOT NULL,
-                createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                expiresAt DATETIME NOT NULL,
+                isUsed TINYINT(1) DEFAULT 0,
+                createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
         `);
-
-        // Create parking_slots table
-        const createParkingSlotsTable = `
-            CREATE TABLE IF NOT EXISTS parking_slots (
-                id INT PRIMARY KEY AUTO_INCREMENT,
-                slotNumber VARCHAR(20) UNIQUE NOT NULL,
-                status ENUM('available', 'occupied', 'reserved') DEFAULT 'available',
-                userId INT,
-                assignedAt TIMESTAMP NULL,
-                createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (userId) REFERENCES users(id) ON DELETE SET NULL
-            )
-        `;
-
-        // Insert initial parking slots
-        const insertParkingSlots = `
-            INSERT INTO parking_slots (slotNumber, status) VALUES 
-            ('A1', 'available'),
-            ('A2', 'available'),
-            ('A3', 'available'),
-            ('B1', 'available'),
-            ('B2', 'available'),
-            ('B3', 'available'),
-            ('C1', 'available'),
-            ('C2', 'available'),
-            ('C3', 'available')
-            ON DUPLICATE KEY UPDATE status = 'available'
-        `;
-
-        await pool.query(createParkingSlotsTable);
-        await pool.query(insertParkingSlots);
 
         await pool.query(`
-            CREATE TABLE IF NOT EXISTS notifications (
+            CREATE TABLE IF NOT EXISTS slot_requests (
                 id INT PRIMARY KEY AUTO_INCREMENT,
-                userId INT,
-                type VARCHAR(50) NOT NULL,
-                message TEXT NOT NULL,
-                isRead BOOLEAN DEFAULT FALSE,
-                isSystem BOOLEAN DEFAULT FALSE,
-                createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+                userId INT NOT NULL,
+                slotId INT NOT NULL,
+                requestedEntryTime DATETIME NOT NULL,
+                requestedExitTime DATETIME NOT NULL,
+                status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+                createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (slotId) REFERENCES parking_slots(id) ON DELETE CASCADE
             )
         `);
+
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS tickets (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                userId INT NOT NULL,
+                slotId INT NOT NULL,
+                requestedEntryTime DATETIME NOT NULL,
+                requestedExitTime DATETIME NOT NULL,
+                actualEntryTime TIMESTAMP NULL,
+                actualExitTime TIMESTAMP NULL,
+                duration INT NULL,
+                amount DECIMAL(10,2) NULL,
+                status ENUM('pending', 'active', 'completed', 'cancelled') DEFAULT 'pending',
+                createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (slotId) REFERENCES parking_slots(id) ON DELETE CASCADE
+            )
+        `);
+
+        // Create indexes
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_users_status ON users(status)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_admins_email ON admins(email)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_parking_slots_status ON parking_slots(status)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_parking_slots_userId ON parking_slots(userId)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_notifications_userId ON notifications(userId)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_notifications_isRead ON notifications(isRead)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_slot_requests_userId ON slot_requests(userId)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_slot_requests_slotId ON slot_requests(slotId)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_slot_requests_status ON slot_requests(status)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_tickets_userId ON tickets(userId)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_tickets_slotId ON tickets(slotId)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status)');
 
         app.listen(PORT, () => {
             console.log(`Server running on http://localhost:${PORT}`);

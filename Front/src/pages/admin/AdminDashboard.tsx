@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, ParkingSquare, Clock, AlertCircle, Settings, ParkingCircle, LogOut, LayoutDashboard } from 'lucide-react';
+import { Users, ParkingSquare, Clock, AlertCircle, Settings, ParkingCircle, LogOut, LayoutDashboard, User, MapPin, Bell, Ticket } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { useAuth } from '../../lib/auth-context';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -352,6 +352,14 @@ const AdminDashboard: React.FC = () => {
             <Link to="/admin/slot-requests">
               <Button variant="outline" className="w-full">Manage Slot Requests</Button>
             </Link>
+          </div>
+          <div className="my-6">
+            <button 
+              className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors" 
+              onClick={() => navigate('/admin/tickets')}
+            >
+              <Ticket className="w-5 h-5" /> Tickets
+            </button>
           </div>
         </motion.div>
       </main>

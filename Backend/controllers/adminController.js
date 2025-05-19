@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const pool = require('../config/database');
 const { hashPassword, comparePassword, generateToken, errorResponse, successResponse } = require('../utils/helper');
 const { sendEmail } = require('../utils/email');
-const { SlotRequest } = require('../models');
+const { SlotRequest, Ticket } = require('../models');
 const User = require('../models/User');
 const ParkingSlot = require('../models/ParkingSlot');
 
@@ -278,6 +278,8 @@ const AdminController = {
         return errorResponse(res, 'User not found or not pending approval', 404);
       }
 
+      const user = users[0];
+
       // Find next available slot
       const [availableSlots] = await connection.query(
         'SELECT * FROM parking_slots WHERE status = ? ORDER BY slotNumber ASC LIMIT 1',
@@ -302,6 +304,16 @@ const AdminController = {
         ['occupied', userId, slot.id]
       );
 
+      // Create a ticket for the user
+      const now = new Date();
+      const requestedEntryTime = user.preferredEntryTime || now;
+      const requestedExitTime = user.preferredExitTime || new Date(now.getTime() + 24 * 60 * 60 * 1000); // Default to 24 hours from now
+
+      const [ticketResult] = await connection.query(
+        'INSERT INTO tickets (userId, slotId, requestedEntryTime, requestedExitTime, status) VALUES (?, ?, ?, ?, "pending")',
+        [userId, slot.id, requestedEntryTime, requestedExitTime]
+      );
+
       // Create notification
       await connection.query(
         `INSERT INTO notifications (userId, type, message, isRead)
@@ -312,12 +324,13 @@ const AdminController = {
       // Send approval email
       try {
         await sendEmail({
-          to: users[0].email,
+          to: user.email,
           subject: 'Account Approved',
           html: `
             <h1>Account Approved</h1>
-            <p>Dear ${users[0].name},</p>
+            <p>Dear ${user.name},</p>
             <p>Your account has been approved. You have been assigned parking slot ${slot.slotNumber}.</p>
+            <p>Your parking ticket has been created and is pending activation.</p>
             <p>Best regards,<br>Parking Management Team</p>
           `
         });
@@ -330,7 +343,8 @@ const AdminController = {
       return successResponse(res, 'User approved successfully', {
         slotNumber: slot.slotNumber,
         slotStatus: 'occupied',
-        assignedAt: new Date()
+        assignedAt: new Date(),
+        ticketId: ticketResult.insertId
       });
     } catch (error) {
       await connection.rollback();

@@ -165,6 +165,19 @@ interface LoginCredentials {
   password: string;
 }
 
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
+interface SlotRequestData {
+  slotId: number;
+  requestedEntryTime: string;
+  requestedExitTime: string;
+  reason?: string;
+}
+
 // Auth API
 export const authAPI = {
   // User Auth
@@ -270,6 +283,18 @@ export const authAPI = {
   changePassword: (data: PasswordChangeData) => {
     return api.put<{ status: string; message: string }>('/user/change-password', data);
   },
+
+  // Forgot Password
+  forgotPassword: async (data: { email: string; role: 'user' | 'admin' }) => {
+    const response = await api.post<ApiResponse<void>>('/auth/forgot-password', data);
+    return response.data;
+  },
+
+  // Reset Password
+  resetPassword: async (data: { email: string; code: string; newPassword: string; role: 'user' | 'admin' }) => {
+    const response = await api.post<ApiResponse<void>>('/auth/reset-password', data);
+    return response.data;
+  },
 };
 
 // User API
@@ -328,9 +353,12 @@ export const userAPI = {
       throw error;
     }
   },
-  requestSlot: async (slotId: number) => {
+  requestSlot: async (slotId: number, requestData: Omit<SlotRequestData, 'slotId'>) => {
     try {
-      const response = await api.post('/user/slot-requests', { slotId });
+      const response = await api.post('/user/slot-requests', {
+        slotId,
+        ...requestData
+      });
       return response.data;
     } catch (error: any) {
       console.error('Error requesting slot:', error);
@@ -347,6 +375,26 @@ export const userAPI = {
       return response.data;
     } catch (error: any) {
       console.error('Error fetching slot requests:', error);
+      throw error;
+    }
+  },
+
+  getActiveTicket: async () => {
+    try {
+      const response = await api.get('/tickets/my/active');
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching active ticket:', error);
+      throw error;
+    }
+  },
+
+  calculateEstimatedAmount: async (data: { requestedEntryTime: string; requestedExitTime: string }) => {
+    try {
+      const response = await api.post('/tickets/calculate-amount', data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error calculating estimated amount:', error);
       throw error;
     }
   },
@@ -536,5 +584,73 @@ export const adminAPI = {
     }
   },
 };
+
+// Ticket API functions
+export const ticketAPI = {
+    // Create a new ticket (admin only)
+    createTicket: async (data: { userId: number; slotId: number }) => {
+        const response = await api.post<ApiResponse<{ ticketId: number }>>('/tickets/create', data);
+        return response.data;
+    },
+
+    // Complete a ticket (admin only)
+    completeTicket: async (ticketId: number) => {
+        const response = await api.patch<ApiResponse<{ duration: number; amount: number; exitTime: string }>>(`/tickets/${ticketId}/complete`);
+        return response.data;
+    },
+
+    // Get user's active ticket
+    getActiveTicket: async () => {
+        const response = await api.get<ApiResponse<Ticket>>('/tickets/my/active');
+        return response.data;
+    },
+
+    // Get user's ticket history
+    getUserTickets: async (page: number = 1, limit: number = 10) => {
+        const response = await api.get<ApiResponse<{ tickets: Ticket[]; total: number }>>('/tickets/my/history', {
+            params: { page, limit }
+        });
+        return response.data;
+    },
+
+    // Get all active tickets (admin only)
+    getActiveTickets: async () => {
+        const response = await api.get<ApiResponse<Ticket[]>>('/tickets/active');
+        return response.data;
+    },
+
+    // Get all tickets with pagination and filtering (admin only)
+    getAllTickets: async (page: number = 1, limit: number = 10, status?: string) => {
+        const response = await api.get<ApiResponse<{ tickets: Ticket[]; total: number }>>('/tickets/all', {
+            params: { page, limit, status }
+        });
+        return response.data;
+    }
+};
+
+// Ticket interface
+export interface Ticket {
+    id: number;
+    userId: number;
+    slotId: number;
+    entryTime: string;
+    exitTime?: string;
+    duration?: number;
+    amount?: number;
+    status: 'active' | 'completed';
+    createdAt: string;
+    updatedAt: string;
+    user?: {
+        id: number;
+        name: string;
+        email: string;
+        plateNumber: string;
+    };
+    slot?: {
+        id: number;
+        slotNumber: string;
+        status: string;
+    };
+}
 
 export default api;

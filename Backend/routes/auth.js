@@ -259,4 +259,79 @@ router.post('/admin/login', AuthController.adminLogin);
  */
 router.post('/admin/verify-email', AuthController.verifyAdminEmail);
 
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Request password reset
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - role
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: User's email address
+ *               role:
+ *                 type: string
+ *                 enum: [user, admin]
+ *                 description: Role of the account (user or admin)
+ *     responses:
+ *       200:
+ *         description: Password reset code sent successfully
+ *       404:
+ *         description: Account not found
+ */
+router.post('/forgot-password', AuthController.forgotPassword);
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Reset password using verification code
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - code
+ *               - newPassword
+ *               - role
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: User's email address
+ *               code:
+ *                 type: string
+ *                 description: Verification code received via email
+ *               newPassword:
+ *                 type: string
+ *                 format: password
+ *                 description: New password (min 8 characters)
+ *               role:
+ *                 type: string
+ *                 enum: [user, admin]
+ *                 description: Role of the account (user or admin)
+ *     responses:
+ *       200:
+ *         description: Password reset successful
+ *       400:
+ *         description: Invalid or expired reset code
+ *       404:
+ *         description: Account not found
+ */
+router.post('/reset-password', AuthController.resetPassword);
+
 module.exports = router; 

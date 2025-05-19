@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { ParkingSquare, User, Lock, LayoutDashboard, LogOut } from 'lucide-react';
+import { ParkingSquare, User, Lock, LayoutDashboard, LogOut, Bell, Ticket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -124,6 +124,18 @@ const UserProfile: React.FC = () => {
                         onClick={() => navigate('/user/profile')}
                     >
                         <User className="w-5 h-5" /> Profile
+                    </button>
+                    <button
+                        className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors"
+                        onClick={() => navigate('/user/slot-requests')}
+                    >
+                        <Bell className="w-5 h-5" /> Slot Requests
+                    </button>
+                    <button
+                        className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors"
+                        onClick={() => navigate('/user/tickets')}
+                    >
+                        <Ticket className="w-5 h-5" /> My Tickets
                     </button>
                     <button
                         className="flex items-center gap-3 py-2 px-4 rounded-lg hover:bg-park-secondary/20 transition-colors"

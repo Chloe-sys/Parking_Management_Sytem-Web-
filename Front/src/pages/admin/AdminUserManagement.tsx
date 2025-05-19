@@ -335,22 +335,22 @@ const AdminUserManagement: React.FC = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[50px] text-white">ID</TableHead>
-                      <TableHead className="text-white">Name</TableHead>
-                      <TableHead className="text-white">Email</TableHead>
-                      <TableHead className="text-white">Plate Number</TableHead>
-                      <TableHead className="text-white">Status</TableHead>
-                      <TableHead className="text-white">Created At</TableHead>
-                      <TableHead className="text-right text-white">Actions</TableHead>
+                      <TableHead className="text-black">Name</TableHead>
+                      <TableHead className="text-black">Email</TableHead>
+                      <TableHead className="text-black">Plate Number</TableHead>
+                      <TableHead className="text-black">Status</TableHead>
+                      <TableHead className="text-black">Created At</TableHead>
+                      <TableHead className="text-right text-black">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {users.map((user) => (
                       <TableRow key={user.id}>
-                        <TableCell className="font-medium text-white">{user.id}</TableCell>
-                        <TableCell className="text-white">{user.name}</TableCell>
-                        <TableCell className="text-white">{user.email}</TableCell>
-                        <TableCell className="text-white">{user.plateNumber}</TableCell>
-                        <TableCell className="text-white">
+                        <TableCell className="font-medium text-green">{user.id}</TableCell>
+                        <TableCell className="text-green">{user.name}</TableCell>
+                        <TableCell className="text-green">{user.email}</TableCell>
+                        <TableCell className="text-green">{user.plateNumber}</TableCell>
+                        <TableCell className="text-green">
                           <Badge
                             variant={
                               user.status === 'approved'

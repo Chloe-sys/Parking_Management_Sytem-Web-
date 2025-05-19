@@ -14,7 +14,23 @@ const executeQuery = async (query, params) => {
 // User Registration
 exports.register = async (req, res) => {
     try {
-        const { name, email, password, plateNumber } = req.body;
+        const { name, email, password, plateNumber, preferredEntryTime, preferredExitTime } = req.body;
+
+        // Validate input
+        if (!name || !email || !password || !plateNumber || !preferredEntryTime || !preferredExitTime) {
+            return errorResponse(res, 'All fields are required', 400);
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return errorResponse(res, 'Invalid email format', 400);
+        }
+
+        // Validate entry and exit times
+        if (new Date(preferredExitTime) <= new Date(preferredEntryTime)) {
+            return errorResponse(res, 'Exit time must be after entry time', 400);
+        }
 
         // Check if user already exists
         const existingUsers = await executeQuery(
@@ -29,8 +45,8 @@ exports.register = async (req, res) => {
         // Hash password and create user
         const hashedPassword = await hashPassword(password);
         const result = await executeQuery(
-            'INSERT INTO users (name, email, password, plateNumber, status, isEmailVerified) VALUES (?, ?, ?, ?, ?, ?)',
-            [name, email, hashedPassword, plateNumber, 'pending', false]
+            'INSERT INTO users (name, email, password, plateNumber, preferredEntryTime, preferredExitTime, status, isEmailVerified) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [name, email, hashedPassword, plateNumber, preferredEntryTime, preferredExitTime, 'pending', false]
         );
 
         // Generate and send OTP
@@ -299,14 +315,27 @@ exports.forgotPassword = async (req, res) => {
     try {
         const { email, role } = req.body;
 
+        // Validate role
+        if (!['user', 'admin'].includes(role)) {
+            return errorResponse(res, 'Invalid role specified', 400);
+        }
+
         // Check if user/admin exists
+        const table = role === 'admin' ? 'admins' : 'users';
         const users = await executeQuery(
-            'SELECT * FROM users WHERE email = ? AND role = ?',
-            [email, role]
+            `SELECT * FROM ${table} WHERE email = ?`,
+            [email]
         );
 
         if (users.length === 0) {
-            return res.status(404).json({ message: 'Account not found' });
+            return errorResponse(res, 'Account not found', 404);
+        }
+
+        const user = users[0];
+
+        // Check if email is verified
+        if (!user.isEmailVerified) {
+            return errorResponse(res, 'Please verify your email first', 401);
         }
 
         // Generate and send OTP
@@ -316,12 +345,22 @@ exports.forgotPassword = async (req, res) => {
             [email, otp, 'reset', role]
         );
 
-        await sendEmail(email, 'Reset Your Password', `Your password reset code is: ${otp}`);
+        // Send email with reset code
+        const emailSubject = 'Reset Your Password';
+        const emailBody = `
+            <h2>Password Reset Request</h2>
+            <p>You have requested to reset your password. Use the following code to reset your password:</p>
+            <h1 style="color: #4CAF50; font-size: 24px; letter-spacing: 2px;">${otp}</h1>
+            <p>This code will expire in 10 minutes.</p>
+            <p>If you didn't request this, please ignore this email.</p>
+        `;
 
-        res.json({ message: 'Password reset code sent to your email' });
+        await sendEmail(email, emailSubject, emailBody);
+
+        return successResponse(res, 'Password reset code sent to your email');
     } catch (error) {
         console.error('Forgot password error:', error);
-        res.status(500).json({ message: 'Error in forgot password process' });
+        return errorResponse(res, 'Error in forgot password process', 500, error);
     }
 };
 
@@ -330,6 +369,16 @@ exports.resetPassword = async (req, res) => {
     try {
         const { email, code, newPassword, role } = req.body;
 
+        // Validate role
+        if (!['user', 'admin'].includes(role)) {
+            return errorResponse(res, 'Invalid role specified', 400);
+        }
+
+        // Validate password
+        if (!newPassword || newPassword.length < 8) {
+            return errorResponse(res, 'Password must be at least 8 characters long', 400);
+        }
+
         // Verify OTP
         const otps = await executeQuery(
             'SELECT * FROM otps WHERE email = ? AND code = ? AND type = ? AND role = ? AND isUsed = false AND expiresAt > NOW() ORDER BY createdAt DESC LIMIT 1',
@@ -337,25 +386,49 @@ exports.resetPassword = async (req, res) => {
         );
 
         if (otps.length === 0) {
-            return res.status(400).json({ message: 'Invalid or expired reset code' });
+            return errorResponse(res, 'Invalid or expired reset code', 400);
+        }
+
+        const otp = otps[0];
+
+        // Check if user/admin exists
+        const table = role === 'admin' ? 'admins' : 'users';
+        const users = await executeQuery(
+            `SELECT * FROM ${table} WHERE email = ?`,
+            [email]
+        );
+
+        if (users.length === 0) {
+            return errorResponse(res, 'Account not found', 404);
         }
 
         // Update password
         const hashedPassword = await hashPassword(newPassword);
         await executeQuery(
-            'UPDATE users SET password = ? WHERE email = ? AND role = ?',
-            [hashedPassword, email, role]
+            `UPDATE ${table} SET password = ? WHERE email = ?`,
+            [hashedPassword, email]
         );
 
+        // Mark OTP as used
         await executeQuery(
             'UPDATE otps SET isUsed = true WHERE id = ?',
-            [otps[0].id]
+            [otp.id]
         );
 
-        res.json({ message: 'Password reset successful' });
+        // Send confirmation email
+        const emailSubject = 'Password Reset Successful';
+        const emailBody = `
+            <h2>Password Reset Successful</h2>
+            <p>Your password has been successfully reset.</p>
+            <p>If you didn't make this change, please contact support immediately.</p>
+        `;
+
+        await sendEmail(email, emailSubject, emailBody);
+
+        return successResponse(res, 'Password reset successful');
     } catch (error) {
         console.error('Reset password error:', error);
-        res.status(500).json({ message: 'Error in password reset' });
+        return errorResponse(res, 'Error in password reset', 500, error);
     }
 };
 

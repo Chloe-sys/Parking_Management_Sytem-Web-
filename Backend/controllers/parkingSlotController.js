@@ -319,59 +319,57 @@ const ParkingSlotController = {
     try {
         const { slotId } = req.params;
         const { userId } = req.body;
-
         // First check if user already has a slot
         const [existingSlots] = await pool.query(
             'SELECT * FROM parking_slots WHERE userId = ?',
             [userId]
         );
-
         if (existingSlots.length > 0) {
-            return res.status(400).json({ 
-                message: 'User already has an assigned slot. Please release the current slot before assigning a new one.' 
+            return res.status(400).json({
+                message: 'User already has an assigned slot. Please release the current slot before assigning a new one.'
             });
         }
-
         // Check if slot exists and is available
         const [slots] = await pool.query(
             'SELECT * FROM parking_slots WHERE id = ?',
             [slotId]
         );
-
         if (slots.length === 0) {
             return res.status(404).json({ message: 'Slot not found' });
         }
-
         const slot = slots[0];
         if (slot.userId !== null) {
             return res.status(400).json({ message: 'Slot is already assigned to another user' });
         }
-
         // Assign slot to user
         await pool.query(
             'UPDATE parking_slots SET userId = ?, status = "assigned" WHERE id = ?',
             [userId, slotId]
         );
-
         // Create notification for the user
         await pool.query(
             'INSERT INTO notifications (userId, type, message) VALUES (?, "approval", ?)',
             [userId, `You have been assigned parking slot ${slot.slotNumber}.`]
         );
-
-        res.json({ 
+        // Fetch the updated slot info with user details
+        const [updatedSlotRows] = await pool.query(
+            `SELECT ps.*, u.name as userName, u.email as userEmail, u.plateNumber
+             FROM parking_slots ps
+             LEFT JOIN users u ON ps.userId = u.id
+             WHERE ps.id = ?`,
+            [slotId]
+        );
+        const updatedSlot = updatedSlotRows[0];
+        res.json({
             message: 'Slot assigned successfully',
-            slot: {
-                id: slot.id,
-                slotNumber: slot.slotNumber,
-                status: 'assigned'
-            }
+            slot: updatedSlot
         });
     } catch (error) {
         console.error('Error assigning slot:', error);
         res.status(500).json({ message: 'Error assigning slot' });
     }
   }
+
 };
 
 module.exports = ParkingSlotController; 
