@@ -1,7 +1,7 @@
 // services/api.ts
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8082/api';
+const API_URL = 'https://parking-management-sytem-web.onrender.com';
 
 // Create axios instance
 const api = axios.create({
