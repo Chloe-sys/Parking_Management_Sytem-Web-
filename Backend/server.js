@@ -15,14 +15,28 @@ const parkingSlotRoutes = require('./routes/parkingSlot');
 const app = express();
 
 // CORS configuration
-const corsOptions = {
-    origin: ['http://localhost:8086', 'https://parking-management-sytem-web.vercel.app'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-};
+const allowedOrigins = [
+    'http://localhost:8086',
+    'https://parking-management-sytem-web.vercel.app'
+];
 
-// Middleware
-app.use(cors(corsOptions));
+app.use(cors({
+    origin: function (origin, callback) {
+        // allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true // allows cookies and auth headers
+}));
+
+// Handle preflight requests globally
+app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
