@@ -93,6 +93,23 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 8082;
 
+async function createIndexIfNotExists(table, indexName, column) {
+    const [rows] = await pool.query(`
+        SELECT COUNT(1) AS IndexExists
+        FROM INFORMATION_SCHEMA.STATISTICS
+        WHERE table_schema = DATABASE()
+          AND table_name = ?
+          AND index_name = ?
+    `, [table, indexName]);
+
+    if (rows[0].IndexExists === 0) {
+        await pool.query(`CREATE INDEX ${indexName} ON ${table}(${column})`);
+        console.log(`✅ Created index ${indexName} on ${table}(${column})`);
+    } else {
+        console.log(`ℹ️ Index ${indexName} already exists on ${table}`);
+    }
+}
+
 const startServer = async () => {
     try {
         // Test database connection
