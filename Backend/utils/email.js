@@ -13,7 +13,7 @@ const sendEmail = async (to, subject, html) => {
 
     const msg = {
       to, // recipient
-      from: 'no-reply@sendgrid.net', // SendGrid default domain sender
+      from: 'karlychloee12@gmail.com', // SendGrid default domain sender
       subject,
       html,
     };
