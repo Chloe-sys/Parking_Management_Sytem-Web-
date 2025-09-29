@@ -205,19 +205,19 @@ const startServer = async () => {
         `);
 
         // Create indexes
-        await pool.query('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)');
-        await pool.query('CREATE INDEX IF NOT EXISTS idx_users_status ON users(status)');
-        await pool.query('CREATE INDEX IF NOT EXISTS idx_admins_email ON admins(email)');
-        await pool.query('CREATE INDEX IF NOT EXISTS idx_parking_slots_status ON parking_slots(status)');
-        await pool.query('CREATE INDEX IF NOT EXISTS idx_parking_slots_userId ON parking_slots(userId)');
-        await pool.query('CREATE INDEX IF NOT EXISTS idx_notifications_userId ON notifications(userId)');
-        await pool.query('CREATE INDEX IF NOT EXISTS idx_notifications_isRead ON notifications(isRead)');
-        await pool.query('CREATE INDEX IF NOT EXISTS idx_slot_requests_userId ON slot_requests(userId)');
-        await pool.query('CREATE INDEX IF NOT EXISTS idx_slot_requests_slotId ON slot_requests(slotId)');
-        await pool.query('CREATE INDEX IF NOT EXISTS idx_slot_requests_status ON slot_requests(status)');
-        await pool.query('CREATE INDEX IF NOT EXISTS idx_tickets_userId ON tickets(userId)');
-        await pool.query('CREATE INDEX IF NOT EXISTS idx_tickets_slotId ON tickets(slotId)');
-        await pool.query('CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status)');
+        await createIndexIfNotExists('users', 'idx_users_email', 'email');
+        await createIndexIfNotExists('users', 'idx_users_status', 'status');
+        await createIndexIfNotExists('admins', 'idx_admins_email', 'email');
+        await createIndexIfNotExists('parking_slots', 'idx_parking_slots_status', 'status');
+        await createIndexIfNotExists('parking_slots', 'idx_parking_slots_userId', 'userId');
+        await createIndexIfNotExists('notifications', 'idx_notifications_userId', 'userId');
+        await createIndexIfNotExists('notifications', 'idx_notifications_isRead', 'isRead');
+        await createIndexIfNotExists('slot_requests', 'idx_slot_requests_userId', 'userId');
+        await createIndexIfNotExists('slot_requests', 'idx_slot_requests_slotId', 'slotId');
+        await createIndexIfNotExists('slot_requests', 'idx_slot_requests_status', 'status');
+        await createIndexIfNotExists('tickets', 'idx_tickets_userId', 'userId');
+        await createIndexIfNotExists('tickets', 'idx_tickets_slotId', 'slotId');
+        await createIndexIfNotExists('tickets', 'idx_tickets_status', 'status');
 
         app.listen(PORT, () => {
             console.log(`Server running on http://localhost:${PORT}`);
