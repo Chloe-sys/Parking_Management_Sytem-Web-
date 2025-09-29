@@ -41,8 +41,8 @@ const swaggerOptions = {
         },
         servers: [
             {
-                url: `http://localhost:${process.env.PORT || 8082}`,
-                description: 'Development server'
+               url: 'https://parking-management-sytem-web.onrender.com', 
+               description: 'Production server' 
             }
         ],
         components: {
